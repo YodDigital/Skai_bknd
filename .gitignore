@@ -1,0 +1,13 @@
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+app.db
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*

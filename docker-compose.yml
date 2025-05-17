@@ -1,0 +1,25 @@
+services:
+  autogen-app:
+    build: .
+    image: flask-autogen-saas
+    container_name: flask_autogen-saas_container
+    stdin_open: true  # Keeps stdin open for interaction
+    tty: true  # Allocates a pseudo-TTY to provide an interactive terminal
+    env_file:
+      - .env
+      - .flaskenv
+    # ports:
+    #   - "8000:8000"
+    volumes:
+      - ./workspace:/workspace
+      - ./dwh_agents:/workspace/dwh_agents
+      - ./uploads:/workspace/uploads
+      - ./app.py:/workspace/app.py
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /workspace
+    # command: python orchestrator.py
+    command: python -m flask run
+    # command: python -m chainlit hello --host 0.0.0.0 --port 8000
+    # command: python -m chainlit hello
+    # command: python -m chainlit --version
+
