@@ -1,0 +1,27 @@
+Table: fact_employee_metrics
+- EmployeeNumber (INT, PK)
+- Age (INT, Measure)
+- DailyRate (FLOAT, Measure)
+- DistanceFromHome (FLOAT, Measure)
+- MonthlyIncome (FLOAT, Measure)
+- YearsAtCompany (INT, Measure)
+- JobSatisfaction (INT, Measure)
+- RelationshipSatisfaction (INT, Measure)
+- PerformanceRating (INT, Measure)
+- TrainingTimesLastYear (INT, Measure)
+
+Table: dim_employee
+- EmployeeNumber (INT, PK)
+- Gender (VARCHAR, Dimension)
+- MaritalStatus (VARCHAR, Dimension)
+- Over18 (BOOLEAN, Dimension)
+- OverTime (BOOLEAN, Dimension)
+- JobRole (VARCHAR, Dimension)
+- Department (VARCHAR, Dimension)
+
+Table: dim_business_travel
+- BusinessTravel (VARCHAR, PK)
+
+Table: dim_education
+- Education (VARCHAR, PK)
+- EducationField (VARCHAR, Dimension)

@@ -13,18 +13,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set the working directory
 WORKDIR /workspace
 
-# Install Python packages
+# Install Python packages in stages
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir wheel setuptools
+
+# Base packages
 RUN pip install --no-cache-dir \
     pyautogen \
     openai \
-    "autogen[openai]" \
-    psycopg2 \
     pandas \
     numpy \
     sqlalchemy \
-    flaml[automl] \
     flask \
     python-dotenv
+
+# Packages that might need special handling
+RUN pip install --no-cache-dir "psycopg2-binary" && \
+    pip install --no-cache-dir "autogen[openai]" && \
+    pip install --no-cache-dir "flaml[automl]"
 
 # Expose Chainlit port
 EXPOSE 8000
