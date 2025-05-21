@@ -4,7 +4,9 @@ SQL_QUERIES = {
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             username TEXT NOT NULL, 
             password TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            failed_login_attempts INTEGER DEFAULT 0,
+            locked_until TIMESTAMP
         );
     """,
 

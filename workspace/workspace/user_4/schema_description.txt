@@ -1,0 +1,36 @@
+
+Table: Employee_Fact
+- Columns:
+  - EmployeeNumber: INTEGER (PK)
+  - Attrition: VARCHAR
+  - MonthlyIncome: FLOAT
+  - YearsAtCompany: INTEGER
+  - JobSatisfaction: INTEGER
+  - PerformanceRating: INTEGER
+  - OverTime: VARCHAR
+
+Table: Dim_Employee
+- Columns:
+  - EmployeeNumber: INTEGER (PK)
+  - Age: INTEGER
+  - Gender: VARCHAR
+  - DistanceFromHome: INTEGER
+  - HourlyRate: FLOAT
+  - JobInvolvement: INTEGER
+  - StandardHours: INTEGER
+
+Table: Dim_Job
+- Columns:
+  - JobRole: VARCHAR (PK)
+  - Department: VARCHAR
+  - JobLevel: INTEGER
+  - Education: VARCHAR
+  - EducationField: VARCHAR
+  - YearsInCurrentRole: INTEGER
+
+Table: Dim_Performance
+- Columns:
+  - PerformanceRating: INTEGER (PK)
+  - JobSatisfaction: INTEGER
+  - RelationshipSatisfaction: INTEGER
+  - EnvironmentSatisfaction: INTEGER

@@ -1,0 +1,156 @@
+SCHEMA DESCRIPTION
+
+TABLES:
+1. dim_employee
+  - EmployeeNumber (int, PK)
+  - Age (int, Dimension)
+  - Gender (str, Dimension)
+  - Department (str, Dimension)
+  - Education (int, Dimension)
+  - EducationField (str, Dimension)
+  - JobRole (str, Dimension)
+  - MaritalStatus (str, Dimension)
+  - TotalWorkingYears (int, Dimension)
+  - YearsAtCompany (int, Dimension)
+
+2. dim_job
+  - JobRole (str, Dimension)
+  - JobLevel (int, Dimension)
+  - JobSatisfaction (int, Dimension)
+  - JobInvolvement (int, Dimension)
+  - PerformanceRating (int, Dimension)
+
+3. dim_environment
+  - EnvironmentSatisfaction (int, Dimension)
+  - WorkLifeBalance (int, Dimension)
+  - RelationshipSatisfaction (int, Dimension)
+  - OverTime (str, Dimension)
+
+4. fact_employee_data
+  - EmployeeNumber (int, FK -> dim_employee)
+  - Attrition (str, Measure)
+  - DistanceFromHome (int, Measure)
+  - HourlyRate (int, Measure)
+  - MonthlyIncome (int, Measure)
+  - NumCompaniesWorked (int, Measure)
+  - TrainingTimesLastYear (int, Measure)
+  - YearsInCurrentRole (int, Measure)
+  - YearsSinceLastPromotion (int, Measure)
+  - StockOptionLevel (int, Measure)
+  - PercentSalaryHike (int, Measure)
+
+UNIQUE VALUES PER COLUMN:
+
+Age (int64):
+  Unique count: 43
+  Examples: [41, 49, 37, 33, 27, 32, 59, 30, 38, 36, 35, 29, 31, 34, 28]
+
+Attrition (object):
+  All values: ['Yes', 'No']
+
+BusinessTravel (object):
+  All values: ['Travel_Rarely', 'Travel_Frequently', 'Non-Travel']
+
+DailyRate (int64):
+  Unique count: 886
+  Examples: [1102, 279, 1373, 1392, 591, 1005, 1324, 1358, 216, 1299, 809, 153, 670, 1346, 103]
+
+Department (object):
+  All values: ['Sales', 'Research & Development', 'Human Resources']
+
+DistanceFromHome (int64):
+  Unique count: 29
+  Examples: [1, 8, 2, 3, 24, 23, 27, 16, 15, 26, 19, 21, 5, 11, 9]
+
+Education (int64):
+  All values: [2, 1, 4, 3, 5]
+
+EducationField (object):
+  All values: ['Life Sciences', 'Other', 'Medical', 'Marketing', 'Technical Degree', 'Human Resources']
+
+EmployeeCount (int64):
+  All values: [1]
+
+EmployeeNumber (int64):
+  Unique count: 1470
+  Examples: [1, 2, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18, 19]
+
+EnvironmentSatisfaction (int64):
+  All values: [2, 3, 4, 1]
+
+Gender (object):
+  All values: ['Female', 'Male']
+
+HourlyRate (int64):
+  Unique count: 71
+  Examples: [94, 61, 92, 56, 40, 79, 81, 67, 44, 84, 49, 31, 93, 50, 51]
+
+JobInvolvement (int64):
+  All values: [3, 2, 4, 1]
+
+JobLevel (int64):
+  All values: [2, 1, 3, 4, 5]
+
+JobRole (object):
+  All values: ['Sales Executive', 'Research Scientist', 'Laboratory Technician', 'Manufacturing Director', 'Healthcare Representative', 'Manager', 'Sales Representative', 'Research Director', 'Human Resources']
+
+JobSatisfaction (int64):
+  All values: [4, 2, 3, 1]
+
+MaritalStatus (object):
+  All values: ['Single', 'Married', 'Divorced']
+
+MonthlyIncome (int64):
+  Unique count: 1349
+  Examples: [5993, 5130, 2090, 2909, 3468, 3068, 2670, 2693, 9526, 5237, 2426, 4193, 2911, 2661, 2028]
+
+MonthlyRate (int64):
+  Unique count: 1427
+  Examples: [19479, 24907, 2396, 23159, 16632, 11864, 9964, 13335, 8787, 16577, 16479, 12682, 15170, 8758, 12947]
+
+NumCompaniesWorked (int64):
+  All values: [8, 1, 6, 9, 0, 4, 5, 2, 7, 3]
+
+Over18 (object):
+  All values: ['Y']
+
+OverTime (object):
+  All values: ['Yes', 'No']
+
+PercentSalaryHike (int64):
+  All values: [11, 23, 15, 12, 13, 20, 22, 21, 17, 14, 16, 18, 19, 24, 25]
+
+PerformanceRating (int64):
+  All values: [3, 4]
+
+RelationshipSatisfaction (int64):
+  All values: [1, 4, 2, 3]
+
+StandardHours (int64):
+  All values: [80]
+
+StockOptionLevel (int64):
+  All values: [0, 1, 3, 2]
+
+TotalWorkingYears (int64):
+  Unique count: 40
+  Examples: [8, 10, 7, 6, 12, 1, 17, 5, 3, 31, 13, 0, 26, 24, 22]
+
+TrainingTimesLastYear (int64):
+  All values: [0, 3, 2, 5, 1, 4, 6]
+
+WorkLifeBalance (int64):
+  All values: [1, 3, 2, 4]
+
+YearsAtCompany (int64):
+  Unique count: 37
+  Examples: [6, 10, 0, 8, 2, 7, 1, 9, 5, 4, 25, 3, 12, 14, 22]
+
+YearsInCurrentRole (int64):
+  All values: [4, 7, 0, 2, 5, 9, 8, 3, 6, 13, 1, 15, 14, 16, 11, 10, 12, 18, 17]
+
+YearsSinceLastPromotion (int64):
+  All values: [0, 1, 3, 2, 7, 4, 8, 6, 5, 15, 9, 13, 12, 10, 11, 14]
+
+YearsWithCurrManager (int64):
+  All values: [5, 7, 0, 2, 6, 8, 3, 11, 17, 1, 4, 12, 9, 10, 15, 13, 16, 14]

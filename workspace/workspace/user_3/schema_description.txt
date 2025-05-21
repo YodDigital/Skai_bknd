@@ -1,0 +1,51 @@
+
+Tables and Columns:
+1. **FactEmployee**
+   - EmployeeNumber: INT, PK
+   - MonthlyIncome: FLOAT
+   - DailyRate: FLOAT
+   - Age: INT
+   - DistanceFromHome: FLOAT
+   - NumCompaniesWorked: INT
+   - TotalWorkingYears: INT
+   - YearsAtCompany: INT
+   - YearsInCurrentRole: INT
+   - YearsSinceLastPromotion: INT
+   - TrainingTimesLastYear: INT
+   - PerformanceRating: INT
+
+2. **DimEmployee**
+   - EmployeeNumber: INT, PK
+   - Gender: STRING
+   - MaritalStatus: STRING
+   - Over18: BOOLEAN
+   - OverTime: STRING
+
+3. **DimJob**
+   - JobRole: STRING, PK
+   - BusinessTravel: STRING
+   - Department: STRING
+   - Education: STRING
+   - EducationField: STRING
+   - JobLevel: INT
+   - JobSatisfaction: INT
+   - EnvironmentSatisfaction: INT
+   - RelationshipSatisfaction: INT
+   - JobInvolvement: INT
+   - StockOptionLevel: INT
+   - PercentSalaryHike: FLOAT
+
+4. **DimWorkLife**
+   - WorkLifeBalance: INT, PK
+
+Data Types:
+- INT
+- FLOAT
+- STRING
+- BOOLEAN
+
+Unique Values per Column:
+- DimEmployee: {'Gender': {Unique values}, 'MaritalStatus': {Unique values}, 'Over18': {Unique values}, 'OverTime': {Unique values}}
+- DimJob: {'JobRole': {Unique values}, 'BusinessTravel': {Unique values}, 'Department': {Unique values}, ..., 'PercentSalaryHike': {Unique values}}
+- DimWorkLife: {'WorkLifeBalance': {Unique values}}
+- FactEmployee: {'EmployeeNumber': {Unique values}, ..., 'PerformanceRating': {Unique values}}

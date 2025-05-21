@@ -14,6 +14,7 @@ services:
       - ./workspace:/workspace
       - ./dwh_agents:/workspace/dwh_agents
       - ./uploads:/workspace/uploads
+      - ./templates:/workspace/templates
       - ./app.py:/workspace/app.py
       - ./sql_queries.py:/workspace/sql_queries.py
       - /var/run/docker.sock:/var/run/docker.sock

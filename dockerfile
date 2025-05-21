@@ -17,15 +17,19 @@ WORKDIR /workspace
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir wheel setuptools
 
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+
 # Base packages
 RUN pip install --no-cache-dir \
     pyautogen \
     openai \
     pandas \
     numpy \
-    sqlalchemy \
     flask \
-    python-dotenv
+    sqlalchemy \
+    python-dotenv \
+    flask-sqlalchemy
 
 # Packages that might need special handling
 RUN pip install --no-cache-dir "psycopg2-binary" && \
