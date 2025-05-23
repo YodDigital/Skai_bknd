@@ -36,11 +36,18 @@ RUN pip install --no-cache-dir "psycopg2-binary" && \
     pip install --no-cache-dir "autogen[openai]" && \
     pip install --no-cache-dir "flaml[automl]"
 
+# Copy your script (optional - better to mount for development)
+COPY dwh_agents /workspace/dwh_agents
+COPY uploads /workspace/uploads
+COPY templates /workspace/templates
+COPY app.py /workspace/app.py
+COPY sql_queries.py /workspace/sql_queries.py
+
 # Expose Chainlit port
 EXPOSE 8000
 
 # Default run command (can still be overridden in docker-compose.yml)
-# CMD ["chainlit", "hello", "--host", "0.0.0.0", "--port", "8000"]
+CMD [ "python", "-m", "flask", "run", "app.py", "--host 0.0.0.0", "--port", "8000"]
 
 # Copy your script (optional - better to mount for development)
 # COPY orchestrator.py /workspace/orchestrator.py
