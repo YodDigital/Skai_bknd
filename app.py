@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, session, redirect, url_for, render_template, flash, current_app
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+from urllib.parse import quote, urlencode
 
 from dwh_agents.dwh_code_generator_agent import create_dwh_agent
 from dwh_agents.dwh_code_executor_agent import create_executor_agent
@@ -413,8 +414,8 @@ def login():
         }
         session.permanent = True
         
-        flash(f'Welcome back, {user.username}!', 'success')
-        return redirect(url_for('dashboard'))
+        # flash(f'Welcome back, {user.username}!', 'success')
+        return redirect(url_for('start_chat'))
     
     return render_template('login.html')
 
@@ -423,6 +424,69 @@ def logout():
     session.clear()
     flash('You have been logged out', 'info')
     return redirect(url_for('login'))
+
+# @app.route('/chat')
+# @login_required
+# def launch_chat():
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+#     return redirect(f"http://0.0.0.0:4200?user_id={session['user_id']}")
+
+
+@app.route('/api/user_session/<user_id>')
+@login_required
+def get_user_session(user_id):
+    if session.get('user_id') != int(user_id):
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Add more comprehensive session data
+    response_data = {
+        "warehouse_file_path": session['dwh_file']['warehouse_file_path'],
+        "schema_description": session['dwh_file']['schema_description'], 
+        "username": session['username'],
+        "user_id": session['user_id']
+    }
+    
+    # Add CORS headers for cross-origin requests from Chainlit
+    response = jsonify(response_data)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+    
+    return response
+
+@app.route('/start-chat')
+@login_required
+def start_chat():
+    """Endpoint that redirects to Chainlit with auth parameters"""
+    
+    # Validate that user has uploaded a database file
+    if 'dwh_file' not in session or not session['dwh_file'].get('warehouse_file_path') or not session['dwh_file'].get('schema_description'):
+        flash('Please upload a database file before starting chat.', 'error')
+        return redirect(url_for('register'))  # Redirect to upload page
+    
+    # Create a simple token (or use JWT for better security)
+    auth_token = f"{session['user_id']}-{secrets.token_urlsafe(16)}"
+    
+    # Store the token temporarily (you might want to use Redis or database for production)
+    # For now, we'll rely on the Flask session API endpoint
+    
+    # Get the current Flask base URL
+    flask_base_url = request.url_root
+    
+    # URL-encode all parameters
+    params = {
+        'user_id': str(session['user_id']),
+        'token': auth_token,
+        'flask_base_url': flask_base_url,
+        'username': session['username']  # Additional context
+    }
+    
+    # Build Chainlit URL with parameters
+    chainlit_base_url = os.environ.get('CHAINLIT_URL', 'https://chainlitsaascorrect-production.up.railway.app')
+    chainlit_url = f"{chainlit_base_url}?{urlencode(params)}"
+    
+    return redirect(chainlit_url)
 
 @app.route('/dashboard')
 @login_required
