@@ -6,7 +6,7 @@ def create_executor_agent(work_dir):
         human_input_mode="NEVER",
         code_execution_config={
             "work_dir": str(work_dir),
-            "use_docker": True
+            "use_docker": False
         },
         system_message="""
 You are a code execution agent.
