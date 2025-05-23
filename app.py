@@ -109,8 +109,8 @@ class Database(db.Model):
     __tablename__ = 'user_data_sources'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key
-    data_type = db.Column(db.String(80), unique=True, nullable=False)
-    file_path = db.Column(db.String(200), unique=True, nullable=False)
+    data_type = db.Column(db.String(80), nullable=False)
+    file_path = db.Column(db.String(200), nullable=False)
     db_link = db.Column(db.String(80), unique=True, nullable=True)
     access_code = db.Column(db.String(80), unique=True, nullable=True)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -124,8 +124,8 @@ class DataWarehouse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key
     user_data_source_id = db.Column(db.Integer, db.ForeignKey('user_data_sources.id'), nullable=False)  # Foreign key
-    warehouse_file_path = db.Column(db.String(200), unique=True, nullable=False)
-    schema_description = db.Column(db.String(200), unique=True, nullable=False)
+    warehouse_file_path = db.Column(db.String(200), nullable=False)
+    schema_description = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Create database tables
