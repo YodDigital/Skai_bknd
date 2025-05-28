@@ -9,7 +9,7 @@ from pathlib import Path
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify, session, redirect, url_for, render_template, flash, current_app
+from flask import Flask, request, jsonify, session, redirect, url_for, render_template, flash, make_response, current_app
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from urllib.parse import quote, urlencode
@@ -458,7 +458,7 @@ def get_user_session(user_id):
 @app.route('/start-chat')
 @login_required
 def start_chat():
-    """Endpoint that redirects to Chainlit with auth parameters"""
+    """Endpoint that redirects to Chainlit with auth parameters stored in cookies"""
     
     # Validate that user has uploaded a database file
     if 'dwh_file' not in session or not session['dwh_file'].get('warehouse_file_path') or not session['dwh_file'].get('schema_description'):
@@ -468,25 +468,33 @@ def start_chat():
     # Create a simple token (or use JWT for better security)
     auth_token = f"{session['user_id']}-{secrets.token_urlsafe(16)}"
     
-    # Store the token temporarily (you might want to use Redis or database for production)
-    # For now, we'll rely on the Flask session API endpoint
-    
     # Get the current Flask base URL
     flask_base_url = request.url_root
     
-    # URL-encode all parameters
-    params = {
-        'user_id': str(session['user_id']),
-        'token': auth_token,
-        'flask_base_url': flask_base_url,
-        'username': session['username']  # Additional context
+    # Get Chainlit URL
+    chainlit_base_url = os.environ.get('CHAINLIT_URL', 'https://chainlitsaascorrect-production.up.railway.app')
+    
+    # Create response object for redirect
+    response = make_response(redirect(chainlit_base_url))
+    
+    # Set cookies with auth parameters
+    # These cookies will be accessible to Chainlit since it's on the same domain or you can set domain
+    cookie_options = {
+        'max_age': 3600,  # 1 hour expiry
+        'secure': True,   # Only send over HTTPS
+        'httponly': False,  # Allow JavaScript access (needed for Chainlit to read them)
+        'samesite': 'Lax'   # Protect against CSRF while allowing cross-site navigation
     }
     
-    # Build Chainlit URL with parameters
-    chainlit_base_url = os.environ.get('CHAINLIT_URL', 'https://chainlitsaascorrect-production.up.railway.app')
-    chainlit_url = f"{chainlit_base_url}?{urlencode(params)}"
+    response.set_cookie('auth_user_id', str(session['user_id']), **cookie_options)
+    response.set_cookie('auth_token', auth_token, **cookie_options)
+    response.set_cookie('flask_base_url', flask_base_url, **cookie_options)
+    response.set_cookie('username', session['username'], **cookie_options)
     
-    return redirect(chainlit_url)
+    # Optional: Set a timestamp for when the auth was created
+    response.set_cookie('auth_timestamp', str(int(datetime.now().timestamp())), **cookie_options)
+    
+    return response
 
 @app.route('/dashboard')
 @login_required
