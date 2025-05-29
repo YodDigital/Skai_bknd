@@ -9,7 +9,7 @@ from pathlib import Path
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from flask import Flask, json, render_template_string, request, jsonify, session, redirect, url_for, render_template, flash, make_response, current_app
+from flask import Flask, request, jsonify, session, redirect, url_for, render_template, flash, make_response, current_app
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from urllib.parse import quote, urlencode
@@ -458,7 +458,7 @@ def get_user_session(user_id):
 @app.route('/start-chat')
 @login_required
 def start_chat():
-    """Endpoint that stores auth parameters in localStorage and redirects to Chainlit"""
+    """Endpoint that redirects to Chainlit with auth parameters stored in cookies"""
     
     # Validate that user has uploaded a database file
     if 'dwh_file' not in session or not session['dwh_file'].get('warehouse_file_path') or not session['dwh_file'].get('schema_description'):
@@ -474,171 +474,28 @@ def start_chat():
     # Get Chainlit URL
     chainlit_base_url = os.environ.get('CHAINLIT_URL', 'https://chainlitsaascorrect-production.up.railway.app')
     
-    # Prepare auth data for localStorage
-    auth_data = {
-        'user_id': str(session['user_id']),
-        'auth_token': auth_token,
-        'flask_base_url': flask_base_url,
-        'username': session['username'],
-        'auth_timestamp': int(datetime.now().timestamp()),
-        'warehouse_file_path': session['dwh_file']['warehouse_file_path'],
-        'schema_description': session['dwh_file']['schema_description']
+    # Create response object for redirect
+    response = make_response(redirect(chainlit_base_url))
+    
+    # Set cookies with auth parameters
+    # These cookies will be accessible to Chainlit since it's on the same domain or you can set domain
+    cookie_options = {
+        'max_age': 3600,  # 1 hour expiry
+        'secure': True,   # Only send over HTTPS
+        'httponly': False,  # Allow JavaScript access (needed for Chainlit to read them)
+        'samesite': 'None',  # Protect against CSRF while allowing cross-site navigation
+        'domain': '.railway.app'
     }
     
-    # Create an intermediate HTML page that stores data in localStorage and redirects
-    html_template = '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Redirecting to Chat...</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                margin: 0;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-            }
-            .container {
-                text-align: center;
-                background: rgba(255, 255, 255, 0.1);
-                padding: 2rem;
-                border-radius: 10px;
-                backdrop-filter: blur(10px);
-            }
-            .spinner {
-                border: 3px solid rgba(255, 255, 255, 0.3);
-                border-top: 3px solid white;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-                margin: 20px auto;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Setting up your chat session...</h2>
-            <div class="spinner"></div>
-            <p>You will be redirected automatically.</p>
-        </div>
-        
-        <script>
-            // Store auth data in localStorage
-            const authData = {{ auth_data_json|safe }};
-            
-            try {
-                // Store each piece of auth data
-                Object.keys(authData).forEach(key => {
-                    localStorage.setItem(`chainlit_${key}`, authData[key]);
-                });
-                
-                // Set expiry time (1 hour from now)
-                const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
-                localStorage.setItem('chainlit_auth_expiry', expiryTime.toString());
-                
-                console.log('Auth data stored in localStorage');
-                
-                // Redirect to Chainlit after a short delay
-                setTimeout(() => {
-                    window.location.href = '{{ chainlit_url }}';
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Error storing auth data:', error);
-                alert('Error setting up authentication. Please try again.');
-                window.location.href = '{{ fallback_url }}';
-            }
-        </script>
-    </body>
-    </html>
-    '''
+    response.set_cookie('auth_user_id', str(session['user_id']), **cookie_options)
+    response.set_cookie('auth_token', auth_token, **cookie_options)
+    response.set_cookie('flask_base_url', flask_base_url, **cookie_options)
+    response.set_cookie('username', session['username'], **cookie_options)
     
-    # Render the template with the auth data
-    return render_template_string(
-        html_template,
-        auth_data_json=json.dumps(auth_data),
-        chainlit_url=chainlit_base_url,
-        fallback_url=url_for('register')
-    )
-
-
-# Helper function to validate localStorage auth from API endpoints
-def validate_localstorage_auth(request_data):
-    """
-    Validate authentication data that was sent from localStorage
-    This would be called when Chainlit sends the auth data to your API
-    """
-    required_fields = ['user_id', 'auth_token', 'auth_timestamp']
+    # Optional: Set a timestamp for when the auth was created
+    response.set_cookie('auth_timestamp', str(int(datetime.now().timestamp())), **cookie_options)
     
-    # Check if all required fields are present
-    if not all(field in request_data for field in required_fields):
-        return False, "Missing required authentication fields"
-    
-    # Validate token format
-    user_id = request_data['user_id']
-    auth_token = request_data['auth_token']
-    
-    if not auth_token.startswith(f"{user_id}-"):
-        return False, "Invalid token format"
-    
-    # Check if token has expired (1 hour)
-    try:
-        auth_timestamp = float(request_data['auth_timestamp'])
-        current_time = datetime.now().timestamp()
-        
-        if current_time - auth_timestamp > 3600:  # 1 hour
-            return False, "Authentication token has expired"
-            
-    except (ValueError, TypeError):
-        return False, "Invalid timestamp format"
-    
-    return True, "Authentication valid"
-
-
-# API endpoint that accepts localStorage auth data
-@app.route('/api/validate-localstorage-auth', methods=['POST'])
-def validate_localstorage_auth_endpoint():
-    """Validate authentication data sent from localStorage"""
-    
-    try:
-        auth_data = request.get_json()
-        
-        if not auth_data:
-            return jsonify({'error': 'No authentication data provided'}), 400
-        
-        is_valid, message = validate_localstorage_auth(auth_data)
-        
-        if not is_valid:
-            return jsonify({'error': message}), 401
-        
-        # Return user data if validation successful
-        response_data = {
-            'user_id': auth_data['user_id'],
-            'username': auth_data.get('username'),
-            'warehouse_file_path': auth_data.get('warehouse_file_path'),
-            'schema_description': auth_data.get('schema_description'),
-            'validated_at': datetime.now().isoformat()
-        }
-        
-        response = jsonify(response_data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
-        
-        return response
-        
-    except Exception as e:
-        print(f"Auth validation error: {e}")
-        return jsonify({'error': 'Validation failed'}), 500
+    return response
 
 @app.route('/dashboard')
 @login_required
