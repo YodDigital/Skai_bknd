@@ -413,6 +413,12 @@ def login():
             # Add other needed fields
         }
         session.permanent = True
+
+        global glo_dwh, glo_schema_file, glo_id, glo_name
+        glo_id = user.id
+        glo_name = user.username
+        glo_dwh = user.user_dwh.warehouse_file_path
+        glo_schema_file = user.user_dwh.schema_description
         
         # flash(f'Welcome back, {user.username}!', 'success')
         return redirect(url_for('start_chat'))
@@ -436,15 +442,15 @@ def logout():
 @app.route('/api/user_session/<user_id>')
 @login_required
 def get_user_session(user_id):
-    if session.get('user_id') != int(user_id):
+    if glo_id != int(user_id):
         return jsonify({"error": "Unauthorized"}), 403
     
     # Add more comprehensive session data
     response_data = {
-        "warehouse_file_path": session['dwh_file']['warehouse_file_path'],
-        "schema_description": session['dwh_file']['schema_description'], 
-        "username": session['username'],
-        "user_id": session['user_id']
+        "warehouse_file_path": glo_dwh,
+        "schema_description": glo_schema_file, 
+        "username": glo_name,
+        "user_id": glo_id
     }
     
     # Add CORS headers for cross-origin requests from Chainlit
