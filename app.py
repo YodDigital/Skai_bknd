@@ -327,6 +327,7 @@ def register():
             new_user.user_db = new_db_file
 
             #Generate DWH for this user
+            global schema_path, db_path
             schema_path, db_path = generate_dwh_for_user(new_user.id, local_path)
             db_file_path = upload_to_escuelajs(db_path)
             schema_file_path = upload_to_escuelajs(schema_path)
@@ -417,8 +418,8 @@ def login():
         global glo_dwh, glo_schema_file, glo_id, glo_name
         glo_id = user.id
         glo_name = user.username
-        glo_dwh = user.user_dwh.warehouse_file_path
-        glo_schema_file = user.user_dwh.schema_description
+        glo_dwh = db_path
+        glo_schema_file = schema_path
         
         # flash(f'Welcome back, {user.username}!', 'success')
         return redirect(url_for('start_chat'))
