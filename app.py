@@ -440,7 +440,7 @@ def logout():
 
 
 @app.route('/api/user_session/<user_id>')
-@login_required
+# @login_required
 def get_user_session(user_id):
     if glo_id != int(user_id):
         return jsonify({"error": "Unauthorized"}), 403
