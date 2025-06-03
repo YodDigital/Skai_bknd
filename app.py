@@ -187,7 +187,8 @@ def generate_dwh_for_user(user_id, csv_path):
         Analyze the column names extracted from a CSV file and generate a star or snowflake schema-based data warehouse.
 
 Your steps:
-1. Design a schema based on the column names {column_names}.
+1. Design a normalized database schema using all the provided columns: {column_names}. 
+Include appropriate primary keys, foreign keys, and relationships between tables. Ensure the schema follows database normalization principles.
 
 2. MANDATORY: First perform exploratory data analysis on the CSV file using pandas. Include this exact code in your solution:
 
@@ -228,7 +229,7 @@ for col in unique_values:
 
 3. Write Python code to:
    - Load the CSV from `{user_csv_path}`
-   - Transform the data to fit your schema
+   - Transform the data to fit your schema using the provided column names and relationships.
    - Load the data into a relational DB (SQLite) stored in `{db_path}`
    - Enable OLAP operations (slicing, dicing, roll-up, drill-down)
    - Save the generated code to `{generated_code_path}`
