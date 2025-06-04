@@ -176,43 +176,55 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-I need you to create a properly structured SQLite data warehouse from: {user_csv_path}
+I need you to create a properly structured SQLite data warehouse from: {csv_path}
 
 ### Critical Requirements:
 1. PRESERVE ALL COLUMNS - Do not drop or ignore any source columns
 2. Implement proper dimensional modeling:
    - Identify fact tables (containing measurable metrics)
    - Identify dimension tables (containing descriptive attributes)
+   - **For each dimension table, the fact table must contain a foreign key column**
 3. Enforce database integrity:
    - Assign appropriate PRIMARY KEYS (natural or surrogate)
-   - Establish correct FOREIGN KEY relationships
+   - **Create explicit FOREIGN KEY columns in the fact table that reference dimension tables**
+   - **These foreign keys must use the naming convention: [dimension_table_name]_id**
    - Enable SQLite foreign key enforcement
 4. Outputs:
    - Database file: {db_path}
-   - Schema documentation: {schema_path} (TXT)
+   - Schema documentation: {schema_path} (JSON + TXT)
+   - **Must include explicit relationship definitions in the JSON output**
 
 ### Implementation Guidance:
 1. First analyze the data to:
-   - Determine column data types
+   - Determine column data types (**using SQLite types: INTEGER, TEXT, REAL, etc.**)
    - Identify uniqueness/cardinality
    - Detect potential relationships
 2. Design star schema:
-   - Fact tables should contain business metrics
-   - Dimension tables should contain attributes
+   - Fact tables should contain:
+     - **Foreign key columns for all dimensions**
+     - Business metrics/measures
+   - Dimension tables should contain:
+     - Surrogate primary key (**[table_name]_id**)
+     - Descriptive attributes
 3. Database creation:
-   - Use proper SQLite data types
+   - Use proper SQLite data types (**never Pandas types**)
    - Implement PRIMARY KEY constraints
-   - Add FOREIGN KEY constraints
+   - **Add FOREIGN KEY constraints using REFERENCES clauses**
    - Enable PRAGMA foreign_keys
 4. Documentation:
-   - TXT schema with full table definitions
+   - JSON schema must include:
+     - **"foreign_keys" section listing all relationships**
+     - **SQL data types (not Pandas types)**
+   - Human-readable TXT version
    - Column preservation verification
 
 ### Verification:
 Before completion, confirm:
 1. All source columns exist in the database
-2. All foreign keys have matching primary keys
-3. No NULL primary keys allowed
+2. **Every dimension table has a corresponding foreign key in the fact table**
+3. All foreign keys have matching primary keys
+4. No NULL primary keys allowed
+5. **All data types use SQLite terminology**
         """
         
         generator.initiate_chat(
