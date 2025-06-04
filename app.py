@@ -187,8 +187,9 @@ def generate_dwh_for_user(user_id, csv_path):
         Analyze the column names extracted from a CSV file and generate a star or snowflake schema-based data warehouse.
 
 Your steps:
-1. Design a normalized database schema using all the provided columns: {column_names}. 
-Include appropriate primary keys, foreign keys, and relationships between tables. Ensure the schema follows database normalization principles.
+1. Create a star schema data warehouse from this CSV data.
+
+COLUMNS: {column_names}
 
 2. MANDATORY: First perform exploratory data analysis on the CSV file using pandas. Include this exact code in your solution:
 
@@ -228,11 +229,38 @@ for col in unique_values:
 
 
 3. Write Python code to:
-   - Load the CSV from `{user_csv_path}`
-   - Transform the data to fit your schema using the provided column names and relationships.
-   - Load the data into a relational DB (SQLite) stored in `{db_path}`
-   - Enable OLAP operations (slicing, dicing, roll-up, drill-down)
+   - Create ONE fact table with a primary key
+   - Create dimension tables for each entity type (customer, product, time, etc.)
+   - EVERY dimension table MUST have a primary key
+   - Fact table MUST have foreign keys to dimensions
+   -Use SQLite with "PRAGMA foreign_keys = ON"
    - Save the generated code to `{generated_code_path}`
+
+```python
+import pandas as pd
+import sqlite3
+
+df = pd.read_csv("{user_csv_path}")
+
+# Create database with foreign keys enabled
+conn = sqlite3.connect("{db_path}")
+conn.execute("PRAGMA foreign_keys = ON")
+
+# Simple approach: Auto-detect keys and create tables
+# 1. Find ID columns (contain 'id' or unique values)
+# 2. Group other columns by entity type
+# 3. Create dim tables with primary keys
+# 4. Create fact table with foreign keys
+
+# Example structure:
+# CREATE TABLE dim_customer (customer_id INTEGER PRIMARY KEY, name TEXT, ...)
+# CREATE TABLE fact_sales (id INTEGER PRIMARY KEY, customer_id INTEGER, 
+#                         FOREIGN KEY(customer_id) REFERENCES dim_customer(customer_id))
+
+# Write your implementation here...
+```
+
+Make it work with proper primary/foreign keys. Keep it simple but correct.
 
 4. Create a comprehensive `schema_description.txt` in `{user_work_dir}` that MUST include:
    - Table and column names
