@@ -167,7 +167,7 @@ def generate_dwh_for_user(csv_path):
     # user_csv_path = user_work_dir / os.path.basename(csv_path)
     # os.system(f"cp {csv_path} {user_csv_path}")
     
-    db_path = "database.db"
+    db_path = "instance/app.db"
     schema_path = "schema_description.json"
     
     generator = create_dwh_agent(llm_config)
