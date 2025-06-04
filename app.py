@@ -164,10 +164,10 @@ def generate_dwh_for_user(csv_path):
     user_work_dir = WORK_DIR / "user"
     os.makedirs(user_work_dir, exist_ok=True)
     
-    # user_csv_path = user_work_dir / os.path.basename(csv_path)
-    # os.system(f"cp {csv_path} {user_csv_path}")
+    user_csv_path = user_work_dir / os.path.basename(csv_path)
+    os.system(f"cp {csv_path} {user_csv_path}")
     
-    db_path = "instance/app.db"
+    db_path = user_work_dir / "database.db"
     schema_path = user_work_dir / "schema_description.json"
     
     generator = create_dwh_agent(llm_config)
@@ -176,42 +176,43 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-Create a data warehouse using automatic data profiling using the file paths below:
-    - The csv file is foundat: {csv_path}
-    - The database file will be saved at: {db_path}
-    - The schema file will be saved at: {schema_path}
+I need you to create a properly structured SQLite data warehouse from: {user_csv_path}
 
-```python
-import pandas as pd
-import sqlite3
-import json
-from ydata_profiling import ProfileReport  # pip install ydata-profiling
+### Critical Requirements:
+1. PRESERVE ALL COLUMNS - Do not drop or ignore any source columns
+2. Implement proper dimensional modeling:
+   - Identify fact tables (containing measurable metrics)
+   - Identify dimension tables (containing descriptive attributes)
+3. Enforce database integrity:
+   - Assign appropriate PRIMARY KEYS (natural or surrogate)
+   - Establish correct FOREIGN KEY relationships
+   - Enable SQLite foreign key enforcement
+4. Outputs:
+   - Database file: {db_path}
+   - Schema documentation: {schema_path} (TXT)
 
-# Load and profile the data
-df = pd.read_csv('{csv_path}')
-profile = ProfileReport(df, title="Data Analysis", explorative=True)
+### Implementation Guidance:
+1. First analyze the data to:
+   - Determine column data types
+   - Identify uniqueness/cardinality
+   - Detect potential relationships
+2. Design star schema:
+   - Fact tables should contain business metrics
+   - Dimension tables should contain attributes
+3. Database creation:
+   - Use proper SQLite data types
+   - Implement PRIMARY KEY constraints
+   - Add FOREIGN KEY constraints
+   - Enable PRAGMA foreign_keys
+4. Documentation:
+   - TXT schema with full table definitions
+   - Column preservation verification
 
-# Extract insights from profile
-dataset_info = profile.get_description()
-
-# Use profile insights to automatically:
-# 1. Identify categorical vs numeric columns
-# 2. Detect potential keys (high cardinality, unique values)
-# 3. Find relationships between columns
-# 4. Determine appropriate data types
-
-# Create star schema based on actual data patterns
-# No guessing - use the profiling results
-
-# Build database with proper schema
-conn = sqlite3.connect('{db_path}')
-conn.execute("PRAGMA foreign_keys = ON")
-
-# Implementation here...
-```
-
-Use the profiling results to make intelligent schema decisions.
-Save schema description to {schema_path} as JSON.
+### Verification:
+Before completion, confirm:
+1. All source columns exist in the database
+2. All foreign keys have matching primary keys
+3. No NULL primary keys allowed
         """
         
         generator.initiate_chat(
