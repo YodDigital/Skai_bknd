@@ -211,16 +211,16 @@ Use the profiling results to make intelligent schema decisions.
 Save schema description to {schema_path} as JSON.
         """
         
-        result = generator.initiate_chat(
+        generator.initiate_chat(
             executor,
             message=initial_message,
             max_turns=10,
         )
         
-        if db_path.exists() and schema_path.exists():
-            return str(schema_path), str(db_path)
-        else:
-            return None, None
+        # if db_path.exists() and schema_path.exists():
+        return str(schema_path), str(db_path)
+        # else:
+        #     return None, None
     
     except Exception as e:
         print(f"Error: {e}")
