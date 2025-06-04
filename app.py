@@ -161,8 +161,8 @@ def upload_to_escuelajs(filepath):
 def generate_dwh_for_user(csv_path):
     """Enhanced version using pandas-profiling for automatic data analysis."""
     
-    # user_work_dir = Path(f"user_{user_id}")
-    # user_work_dir.mkdir(exist_ok=True)
+    user_work_dir = Path("user")
+    user_work_dir.mkdir(exist_ok=True)
     
     # user_csv_path = user_work_dir / os.path.basename(csv_path)
     # os.system(f"cp {csv_path} {user_csv_path}")
