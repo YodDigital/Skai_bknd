@@ -29,7 +29,8 @@ RUN pip install --no-cache-dir \
     flask \
     sqlalchemy \
     python-dotenv \
-    flask-sqlalchemy
+    flask-sqlalchemy \
+    ydata-profiling
 
 # Packages that might need special handling
 RUN pip install --no-cache-dir "psycopg2-binary" && \

@@ -159,154 +159,72 @@ def upload_to_escuelajs(filepath):
 
 
 def generate_dwh_for_user(user_id, csv_path):
-    """Generate data warehouse using DWH agents."""
-    # Set up working directory for this user
-    user_work_dir = WORK_DIR / f"user_{user_id}"
-    os.makedirs(user_work_dir, exist_ok=True)
+    """Enhanced version using pandas-profiling for automatic data analysis."""
     
-    # Copy the uploaded CSV to the user's work directory
+    user_work_dir = Path(f"user_{user_id}")
+    user_work_dir.mkdir(exist_ok=True)
+    
     user_csv_path = user_work_dir / os.path.basename(csv_path)
     os.system(f"cp {csv_path} {user_csv_path}")
     
-    # Create database path for this user
     db_path = user_work_dir / "database.db"
-    schema_path = user_work_dir / "schema_description.txt"
-    generated_code_path = user_work_dir / "generated_dwh.py"
+    schema_path = user_work_dir / "schema_description.json"
     
-    # Create agents
     generator = create_dwh_agent(llm_config)
     executor = create_executor_agent(user_work_dir)
     
     try:
-        # Read column names from CSV
-        df = pd.read_csv(user_csv_path, nrows=1)
-        column_names = df.columns.tolist()
-        
-        # Create the message for DWH generation
+        # Enhanced message with profiling
         initial_message = f"""
-        Analyze the column names extracted from a CSV file and generate a star or snowflake schema-based data warehouse.
-
-Your steps:
-1. Create a star schema data warehouse from this CSV data.
-
-COLUMNS: {column_names}
-
-2. MANDATORY: First perform exploratory data analysis on the CSV file using pandas. Include this exact code in your solution:
-
-```python
-import pandas as pd
-
-# Load the data
-df = pd.read_csv("{user_csv_path}")
-
-# Create a dictionary to store unique values for each column
-unique_values = dict() 
-
-# For each column, extract unique values or summary statistics
-for column in df.columns:
-    values = df[column].unique()
-   # If too many unique values, provide a summary
-    if len(values) > 20:
-        unique_values[column] = dict() 
-        unique_values[column]['count'] = len(values)
-        unique_values[column]['examples'] = values[:15].tolist()
-        unique_values[column]['data_type'] = str(df[column].dtype)
-    else:
-        unique_values[column] = dict()  
-        unique_values[column]['values'] = values.tolist()
-        unique_values[column]['data_type'] = str(df[column].dtype)
-
-## Print the unique values analysis
-print("UNIQUE VALUES ANALYSIS:")
-for col in unique_values:
-    data = unique_values[col]
-    print("\n" + col + " (" + data['data_type'] + "):")
-    if 'values' in data:
-        print("  All values: " + str(data['values']))
-    else:
-        print("  Unique count: " + str(data['count']))
-        print("  Examples: " + str(data['examples']))
-
-
-3. Write Python code to:
-   - Create ONE fact table with a primary key
-   - Create dimension tables for each entity type (customer, product, time, etc.)
-   - EVERY dimension table MUST have a primary key
-   - Fact table MUST have foreign keys to dimensions
-   -Use SQLite with "PRAGMA foreign_keys = ON"
-   - Save the generated code to `{generated_code_path}`
+Create a data warehouse using automatic data profiling:
 
 ```python
 import pandas as pd
 import sqlite3
+import json
+from ydata_profiling import ProfileReport  # pip install ydata-profiling
 
-df = pd.read_csv("{user_csv_path}")
+# Load and profile the data
+df = pd.read_csv('{user_csv_path}')
+profile = ProfileReport(df, title="Data Analysis", explorative=True)
 
-# Create database with foreign keys enabled
-conn = sqlite3.connect("{db_path}")
+# Extract insights from profile
+dataset_info = profile.get_description()
+
+# Use profile insights to automatically:
+# 1. Identify categorical vs numeric columns
+# 2. Detect potential keys (high cardinality, unique values)
+# 3. Find relationships between columns
+# 4. Determine appropriate data types
+
+# Create star schema based on actual data patterns
+# No guessing - use the profiling results
+
+# Build database with proper schema
+conn = sqlite3.connect('{db_path}')
 conn.execute("PRAGMA foreign_keys = ON")
 
-# Simple approach: Auto-detect keys and create tables
-# 1. Find ID columns (contain 'id' or unique values)
-# 2. Group other columns by entity type
-# 3. Create dim tables with primary keys
-# 4. Create fact table with foreign keys
-
-# Example structure:
-# CREATE TABLE dim_customer (customer_id INTEGER PRIMARY KEY, name TEXT, ...)
-# CREATE TABLE fact_sales (id INTEGER PRIMARY KEY, customer_id INTEGER, 
-#                         FOREIGN KEY(customer_id) REFERENCES dim_customer(customer_id))
-
-# Write your implementation here...
+# Implementation here...
 ```
 
-Make it work with proper primary/foreign keys. Keep it simple but correct.
-
-4. Create a comprehensive `schema_description.txt` in `{user_work_dir}` that MUST include:
-   - Table and column names
-   - Column roles (dimension/measure)
-   - Data types
-   - The complete dictionary of unique values generated in step 2
-   - Table relationships (primary keys, foreign keys)
-
-5. Include this code to write the schema description:
-with open("{user_work_dir}/schema_description.txt", 'w') as f:
-    f.write("SCHEMA DESCRIPTION\n\n")
-    # Write tables, columns, roles, etc.
-    # ...
-    
-    f.write("\nUNIQUE VALUES PER COLUMN:\n")
-    for col in unique_values:
-        data = unique_values[col]
-        f.write("\n" + col + " (" + data['data_type'] + "):\n")
-        if 'values' in data:
-            f.write("  All values: " + str(data['values']) + "\n")
-        else:
-            f.write("  Unique count: " + str(data['count']) + "\n")
-            f.write("  Examples: " + str(data['examples']) + "\n")
-
-6. Share the code with the execution agent.
-
-7. If any execution errors are returned, fix the code and resend it until it executes successfully.
-
-REQUIREMENT: The code MUST extract and include unique values for each column as described above. The solution is incomplete without this analysis.
+Use the profiling results to make intelligent schema decisions.
+Save schema description to {schema_path} as JSON.
         """
         
-        # Start the conversation between agents
-        generator.initiate_chat(
+        result = generator.initiate_chat(
             executor,
             message=initial_message,
-            request_reply=False,
-            max_turns=15,
+            max_turns=5,
         )
         
-        # Return paths to the generated files
-        return str(schema_path), str(db_path)
+        if db_path.exists() and schema_path.exists():
+            return str(schema_path), str(db_path)
+        else:
+            return None, None
     
     except Exception as e:
-        print(f"Error in DWH generation: {e}")
+        print(f"Error: {e}")
         return None, None
-    
 @app.route('/')
 def home():
     return render_template('home.html')
