@@ -185,7 +185,7 @@ import json
 from ydata_profiling import ProfileReport  # pip install ydata-profiling
 
 # Load and profile the data
-df = pd.read_csv('{user_csv_path}')
+df = pd.read_csv('{csv_path}')
 profile = ProfileReport(df, title="Data Analysis", explorative=True)
 
 # Extract insights from profile
