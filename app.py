@@ -198,6 +198,11 @@ Create a SQLite data warehouse from: {csv_path}
 - Do NOT modify or redirect these paths
 - Confirm final paths match these exactly
 
+**Strict Naming Convention**  
+   - Fact table: `fact_[fact_name]`  
+   - Dimensions: `dim_[column_name]`  
+   - Keys: `[dimension]_id` (e.g., `gender_id`)
+
 ### Implementation Steps:
 1. ANALYZE the data to:
    - Detect categorical columns (potential dimensions)
