@@ -176,7 +176,10 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-Create a data warehouse using automatic data profiling:
+Create a data warehouse using automatic data profiling using the file paths below:
+    - The csv file is foundat: {csv_path}
+    - The database file will be saved at: {db_path}
+    - The schema file will be saved at: {schema_path}
 
 ```python
 import pandas as pd
@@ -214,7 +217,7 @@ Save schema description to {schema_path} as JSON.
         generator.initiate_chat(
             executor,
             message=initial_message,
-            max_turns=20,
+            max_turns=15,
         )
         
         # if db_path.exists() and schema_path.exists():
