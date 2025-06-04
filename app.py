@@ -214,7 +214,7 @@ Save schema description to {schema_path} as JSON.
         result = generator.initiate_chat(
             executor,
             message=initial_message,
-            max_turns=5,
+            max_turns=10,
         )
         
         if db_path.exists() and schema_path.exists():
