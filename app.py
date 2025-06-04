@@ -158,17 +158,17 @@ def upload_to_escuelajs(filepath):
         return None
 
 
-def generate_dwh_for_user(user_id, csv_path):
+def generate_dwh_for_user(csv_path):
     """Enhanced version using pandas-profiling for automatic data analysis."""
     
-    user_work_dir = Path(f"user_{user_id}")
-    user_work_dir.mkdir(exist_ok=True)
+    # user_work_dir = Path(f"user_{user_id}")
+    # user_work_dir.mkdir(exist_ok=True)
     
-    user_csv_path = user_work_dir / os.path.basename(csv_path)
-    os.system(f"cp {csv_path} {user_csv_path}")
+    # user_csv_path = user_work_dir / os.path.basename(csv_path)
+    # os.system(f"cp {csv_path} {user_csv_path}")
     
-    db_path = user_work_dir / "database.db"
-    schema_path = user_work_dir / "schema_description.json"
+    db_path = "database.db"
+    schema_path = "schema_description.json"
     
     generator = create_dwh_agent(llm_config)
     executor = create_executor_agent(user_work_dir)
@@ -274,7 +274,7 @@ def register():
             new_user.user_db = new_db_file
 
             #Generate DWH for this user
-            schema_path, db_path = generate_dwh_for_user(new_user.id, local_path)
+            schema_path, db_path = generate_dwh_for_user(local_path)
             db_file_path = upload_to_escuelajs(db_path)
             schema_file_path = upload_to_escuelajs(schema_path)
             
@@ -509,7 +509,7 @@ def upload_csv():
             conn.commit()
             
             # Generate DWH for this user
-            schema_path, db_path = generate_dwh_for_user(session['user_id'], local_path)
+            schema_path, db_path = generate_dwh_for_user(local_path)
             
             if schema_path and db_path:
                 # Upload generated files to external storage
