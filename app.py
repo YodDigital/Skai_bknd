@@ -178,6 +178,13 @@ def generate_dwh_for_user(csv_path):
         initial_message = f"""
 Create a SQLite data warehouse from: {csv_path}
 
+### Path Requirements:
+- You MUST use EXACTLY these paths:
+  - Database: {db_path}
+  - Schema: {schema_path}
+- Do NOT modify or redirect these paths
+- Confirm final paths match these exactly
+
 ### STRICT IMPLEMENTATION PROTOCOL
 1. PHASE 1: SCHEMA CREATION
    a) Create ALL dimension tables FIRST:
