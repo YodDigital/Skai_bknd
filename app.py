@@ -178,65 +178,77 @@ def generate_dwh_for_user(csv_path):
         initial_message = f"""
 Create a SQLite data warehouse from: {csv_path}
 
-### Requirements:
-1. Automatic schema detection that works for ANY CSV file
-2. Complete column preservation via:
-   - All original columns represented in either fact or dimension tables
-   - No duplicate columns (replace originals with FKs)
-3. Proper star schema with:
-   - 1 fact table containing only:
-     * Foreign keys to dimensions
-     * Numeric measures
-   - Dimension tables containing:
-     * Surrogate keys ([dimension]_id)
-     * Descriptive attributes
+### STRICT IMPLEMENTATION PROTOCOL
+1. PHASE 1: SCHEMA CREATION
+   a) Create ALL dimension tables FIRST:
+      ```sql
+      CREATE TABLE dim_[column] (
+        [column]_id INTEGER PRIMARY KEY,
+        [column] TEXT
+      );
+      INSERT INTO dim_[column] ([column])
+      SELECT DISTINCT [column] FROM temp_import;
+      ```
+   
+   b) Create fact table with EXACT structure:
+      ```sql
+      CREATE TABLE fact_data (
+        -- Numeric measures
+        [numeric_columns],
+        -- Foreign keys
+        [column]_id INTEGER REFERENCES dim_[column]([column]_id),
+        ...
+      );
+      ```
 
-### Path Requirements:
-- You MUST use EXACTLY these paths:
-  - Database: {db_path}
-  - Schema: {schema_path}
-- Do NOT modify or redirect these paths
-- Confirm final paths match these exactly
+2. PHASE 2: DATA TRANSFORMATION
+   a) Populate dimensions:
+      ```sql
+      INSERT INTO dim_[column] ([column])
+      SELECT DISTINCT [column] FROM temp_import;
+      ```
+   
+   b) Insert fact data with proper FKs:
+      ```sql
+      INSERT INTO fact_data
+      SELECT 
+        t.[numeric_columns],
+        d.[column]_id,
+        ...
+      FROM temp_import t
+      JOIN dim_[column] d ON t.[column] = d.[column];
+      ```
 
-**Strict Naming Convention**  
-   - Fact table: `fact_[fact_name]`  
-   - Dimensions: `dim_[column_name]`  
-   - Keys: `[dimension]_id` (e.g., `gender_id`)
+3. VALIDATION CHECKS (MANDATORY):
+   a) Column preservation:
+      ```sql
+      SELECT 
+        (SELECT COUNT(*) FROM pragma_table_list()) = [expected_table_count],
+        (SELECT COUNT(*) FROM pragma_table_info('fact_data')) = [expected_fact_columns];
+      ```
+   
+   b) Foreign key verification:
+      ```sql
+      SELECT COUNT(*) FROM pragma_foreign_key_list('fact_data')
+      HAVING COUNT(*) = [expected_fk_count];
+      ```
 
-### Implementation Steps:
-1. ANALYZE the data to:
-   - Detect categorical columns (potential dimensions)
-   - Identify numeric columns (potential facts)
-   - Determine cardinality of each column
+### OUTPUT REQUIREMENTS
+1. Database MUST contain:
+   - Fact table with ALL specified columns
+   - Dimension tables with surrogate keys
+   - Verified foreign key relationships
 
-2. TRANSFORM by:
-   a) For each categorical column:
-      - Create dimension table with [column]_id PK
-      - Keep original column values as attributes
-      - Replace original column in fact table with FK
-      - Drop original column from fact table
-   b) For numeric columns:
-      - Keep in fact table as measures
+2. Schema documentation MUST show:
+   - Complete column mapping
+   - Validation results
+   - Any deviations from requirements
 
-3. VALIDATE:
-   - Verify count(original columns) = 
-     count(fact table columns) + 
-     count(dimension attributes)
-   - Confirm no descriptive attributes remain in fact table
-   - Ensure all FKs reference existing PKs
-
-### Output Requirements:
-1. Database file: {db_path} with:
-   - Enabled foreign key constraints
-   - Proper SQL data types
-2. Schema documentation: {schema_path} containing:
-   - TXT report with table definitions showing column mapping
-   - Preservation verification
-
-### Special Handling:
-- For ambiguous columns, prefer keeping in fact table
-- Automatically detect date/time columns for special handling
-- Use conservative data typing (TEXT when uncertain)
+### FAILURE PROTOCOL
+If ANY validation fails:
+1. Rollback entire database
+2. Report EXACT missing elements
+3. Provide recovery DDL
         """
         
         generator.initiate_chat(
