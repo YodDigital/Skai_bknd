@@ -275,7 +275,7 @@ Verify these conditions:
 - [ ] All foreign keys reference existing primary keys
 - [ ] Can successfully JOIN fact table with dimension tables
 - [ ] Database file exists at exact path `{db_path}`
-- [ ] Schema documentation created at `{schema_path}`
+- [ ] Schema documentation file created at exact path `{schema_path}`
 
 ## COMMON ERROR PREVENTION
 **Foreign Key Implementation:**
@@ -297,7 +297,7 @@ Verify these conditions:
 - Foreign keys: `[referenced_dimension]_id`
 
 ## OUTPUT DOCUMENTATION
-Create text file at `{schema_path}` containing:
+Create txt file at containing:
 1. **Actual table schemas** with column definitions (not just metadata)
 2. Original column → final location mapping
 3. **Verification that foreign key columns exist in fact table**
