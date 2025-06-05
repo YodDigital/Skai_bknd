@@ -176,7 +176,6 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-### Task:
 # SQLite Data Warehouse Generation Task
 
 ## OBJECTIVE
@@ -247,17 +246,43 @@ Apply these rules in order:
 Execute in this sequence:
 1. Create SQLite database at `{db_path}`
 2. Enable foreign key constraints: `PRAGMA foreign_keys = ON`
-3. Create dimension tables with surrogate keys
-4. Create fact table with foreign keys and measures
-5. Insert data maintaining referential integrity
+3. Create dimension tables with surrogate keys:
+   ```sql
+   CREATE TABLE dim_[name] (
+       [name]_id INTEGER PRIMARY KEY AUTOINCREMENT,
+       [original_column] TEXT
+   );
+   ```
+4. **CRITICAL**: Create fact table with ACTUAL foreign key columns:
+   ```sql
+   CREATE TABLE fact_[name] (
+       -- Foreign key columns (must exist as actual columns)
+       dimension1_id INTEGER REFERENCES dim_dimension1(dimension1_id),
+       dimension2_id INTEGER REFERENCES dim_dimension2(dimension2_id),
+       -- Numeric measure columns
+       measure1 REAL,
+       measure2 REAL
+   );
+   ```
+5. Insert dimension data and capture surrogate keys
+6. Insert fact data using surrogate keys from dimensions
 
 ### Step 4: Validation Checklist
 Verify these conditions:
 - [ ] All original columns accounted for
-- [ ] Fact table contains only FKs and numeric measures
+- [ ] Fact table contains ACTUAL foreign key columns (not just metadata)
+- [ ] Foreign key columns exist as real columns in fact table schema
 - [ ] All foreign keys reference existing primary keys
+- [ ] Can successfully JOIN fact table with dimension tables
 - [ ] Database file exists at exact path `{db_path}`
 - [ ] Schema documentation created at `{schema_path}`
+
+## COMMON ERROR PREVENTION
+**Foreign Key Implementation:**
+- Do NOT just document foreign keys in schema - CREATE them as actual columns
+- Each foreign key must be a real INTEGER column in the fact table
+- Test joins after creation to ensure foreign keys work
+- Example: If you have dim_gender, fact table must have actual column named gender_id
 
 ## DATA TYPE GUIDELINES
 - Use TEXT for uncertain data types
@@ -273,10 +298,38 @@ Verify these conditions:
 
 ## OUTPUT DOCUMENTATION
 Create JSON/text file at `{schema_path}` containing:
-1. Table definitions with column mappings
+1. **Actual table schemas** with column definitions (not just metadata)
 2. Original column → final location mapping
-3. Data preservation verification summary
-4. Foreign key relationship diagram
+3. **Verification that foreign key columns exist in fact table**
+4. Test query examples proving joins work
+5. Data preservation verification summary
+
+## CRITICAL IMPLEMENTATION REQUIREMENTS
+
+### Foreign Key Column Creation
+**WRONG**: Only documenting foreign keys in schema metadata
+```json
+"foreign_keys": ["Gender_id", "Department_id"]  // This is just documentation
+```
+
+**CORRECT**: Actually creating foreign key columns in fact table
+```sql
+CREATE TABLE fact_sales (
+    Gender_id INTEGER REFERENCES dim_Gender(Gender_id),        -- Real column
+    Department_id INTEGER REFERENCES dim_Department(Department_id), -- Real column
+    MonthlyIncome REAL,
+    Age REAL
+);
+```
+
+### Verification Test
+After creation, this query MUST work:
+```sql
+SELECT f.*, d.Gender 
+FROM fact_sales f 
+JOIN dim_Gender d ON f.Gender_id = d.Gender_id 
+LIMIT 1;
+```
 
 ## ERROR PREVENTION NOTES
 - Validate file paths before starting
