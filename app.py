@@ -168,7 +168,7 @@ def generate_dwh_for_user(csv_path):
     os.system(f"cp {csv_path} {user_csv_path}")
     
     db_path = str((user_work_dir / "database.db").resolve())
-    schema_path = str((user_work_dir / "schema_description.txt").resolve())
+    schema_path = str((user_work_dir / "schema_description.json").resolve())
     
     generator = create_dwh_agent(llm_config)
     executor = create_executor_agent(user_work_dir)
@@ -275,7 +275,7 @@ Verify these conditions:
 - [ ] All foreign keys reference existing primary keys
 - [ ] Can successfully JOIN fact table with dimension tables
 - [ ] Database file exists at exact path `{db_path}`
-- [ ] Schema documentation file created at exact path `{schema_path}`
+- [ ] Schema documentation exists at exact path `{schema_path}`
 
 ## COMMON ERROR PREVENTION
 **Foreign Key Implementation:**
