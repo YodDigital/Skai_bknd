@@ -168,7 +168,7 @@ def generate_dwh_for_user(csv_path):
     os.system(f"cp {csv_path} {user_csv_path}")
     
     db_path = str((user_work_dir / "database.db").resolve())
-    schema_path = str((user_work_dir / "schema_description.json").resolve())
+    schema_path = str((user_work_dir / "schema_description.txt").resolve())
     
     generator = create_dwh_agent(llm_config)
     executor = create_executor_agent(user_work_dir)
@@ -230,8 +230,7 @@ Create a SQLite data warehouse from: {csv_path}
    - Enabled foreign key constraints
    - Proper SQL data types
 2. Schema documentation: {schema_path} containing:
-   - JSON schema with table definitions
-   - TXT report showing column mapping
+   - TXT report with table definitions showing column mapping
    - Preservation verification
 
 ### Special Handling:
