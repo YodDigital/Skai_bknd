@@ -349,7 +349,7 @@ LIMIT 1;
         generator.initiate_chat(
             executor,
             message=initial_message,
-            max_turns=15,
+            max_turns=25,
         )
         
         # if db_path.exists() and schema_path.exists():
