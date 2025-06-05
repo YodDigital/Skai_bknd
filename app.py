@@ -339,7 +339,7 @@ LIMIT 1;
 - Handle NULL values appropriately in dimension tables
 
 ## SUCCESS CRITERIA
-1. SQLite database created at specified path
+1. SQLite database and schema were created at specified paths
 2. All original data preserved and accessible
 3. Valid star schema structure implemented
 4. Foreign key constraints functional
@@ -349,7 +349,7 @@ LIMIT 1;
         generator.initiate_chat(
             executor,
             message=initial_message,
-            max_turns=25,
+            max_turns=20,
         )
         
         # if db_path.exists() and schema_path.exists():
