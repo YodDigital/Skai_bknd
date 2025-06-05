@@ -297,7 +297,7 @@ Verify these conditions:
 - Foreign keys: `[referenced_dimension]_id`
 
 ## OUTPUT DOCUMENTATION
-Create JSON/text file at `{schema_path}` containing:
+Create text file at `{schema_path}` containing:
 1. **Actual table schemas** with column definitions (not just metadata)
 2. Original column → final location mapping
 3. **Verification that foreign key columns exist in fact table**
