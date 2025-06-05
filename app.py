@@ -339,7 +339,7 @@ LIMIT 1;
 - Handle NULL values appropriately in dimension tables
 
 ## SUCCESS CRITERIA
-1. SQLite database and schema were created at specified paths
+1. SQLite database and schema were created at {db_path}  and {schema_path} respectively
 2. All original data preserved and accessible
 3. Valid star schema structure implemented
 4. Foreign key constraints functional
