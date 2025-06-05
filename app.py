@@ -176,91 +176,116 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-Create a SQLite data warehouse from: {csv_path}
+### Task:
+Generate a star-schema SQLite data warehouse from: `{csv_path}`
 
-### Requirements:
-1. Automatic schema detection that works for ANY CSV file
-2. Complete column preservation via:
-   - All original columns represented in either fact or dimension tables
-   - No duplicate columns (replace originals with FKs)
-3. Proper star schema with:
-   - 1 fact table containing only:
-     * Foreign keys to dimensions (using [dimension]_id with the PRAGMA foreign_keys = ON)
-     * Numeric measures
-   - Dimension tables containing:
-     * Surrogate keys ([dimension]_id)
-     * Descriptive attributes
+---
 
-### Path Requirements:
-- You MUST use EXACTLY these paths:
-  - Database: {db_path}
-  - Schema: {schema_path}
-- Do NOT modify or redirect these paths
-- Confirm final paths match these exactly
+### Functional Requirements:
 
-**Strict Naming Convention**  
-   - Fact table: `fact_[fact_name]`  
-   - Dimensions: `dim_[dim_name]`  
-   - Keys: `[dimension]_id` (e.g., `gender_id`)
+1. Automatic Schema Detection  
+   - Must handle any CSV file with no assumptions about structure.
 
-### Implementation Steps:
-    # SMART DIMENSION GROUPING LOGIC
+2. Full Column Preservation
+   - Every original column must appear in either:
+     - The fact table, or
+     - One of the dimension tables
+   - No duplicate columns — categorical data in the fact table must be replaced with foreign keys referencing dimension tables.
+
+3. Star Schema Requirements
+   - Fact Table must contain:
+     - Only numeric measures
+     - Foreign keys to dimensions (`[dimension]_id`)
+   - Dimension Tables must contain:
+     - Surrogate primary keys named `[dimension]_id`
+     - Descriptive attributes (non-numeric)
+
+---
+
+### Output Paths (Strict Requirement):
+
+- SQLite Database File: `{db_path}`  
+- Schema Documentation File: `{schema_path}`  
+
+Do NOT change or redirect these paths. Output must match exactly.
+
+---
+
+### Naming Convention:
+
+- Fact table name: `fact_[fact_name]`  
+- Dimension table names: `dim_[dimension_name]`  
+- Primary/foreign keys: `[dimension]_id`  
+- Use `PRAGMA foreign_keys = ON` to enforce FK constraints in SQLite.
+
+---
 
 ### Dimension Design Rules:
-1. **Group Related Columns** into coherent dimensions:
-   - Example: 'FirstName', 'LastName', 'Email' → 'Customer' dimension
-   - NOT: Each as separate dimensions
 
-2. **Standard Dimensions** to always create:
-   - Date/Time (from timestamp columns)
-   - Location (if address/geo data exists)
-   - Person (for name/contact info)
+1. Group related columns together into a single logical dimension.  
+   - Example: `FirstName`, `LastName`, `Email` → `dim_customer`  
+   - Avoid creating multiple dimensions for closely related fields.
 
-3. **Single-Column Dimensions** ONLY when:
-   - Truly independent attributes
-   - No logical grouping exists
-   - High cardinality (>1000 distinct values)
+2. Mandatory Dimensions (when applicable):
+   - `dim_date` – for timestamp columns  
+   - `dim_location` – for location/address/geo data  
+   - `dim_person` – for names, emails, phones
 
-4. **Junk Dimensions** for:
-   - Low-cardinality flags/indicators
-   - Unrelated categorical columns
-   - Example: 'IsActive', 'Priority', 'Status'
+3. Single-Column Dimensions are allowed only if:
+   - The column is logically independent  
+   - It has no natural group  
+   - It has high cardinality (>1000 unique values)
 
-# ### Fact Table Design Rules: 
-1. ANALYZE the data to:
-   - Detect categorical columns (potential dimensions)
-   - Identify numeric columns (potential facts)
-   - Determine cardinality of each column
+4. Junk Dimensions should group:
+   - Low-cardinality flags (e.g., `IsActive`, `Status`, `Priority`)  
+   - Unrelated categorical fields that do not fit standard dimensions
 
-2. TRANSFORM by:
-   a) For each categorical column:
-      - Create dimension table based on the instructions above
-      - Create surrogate key ([dimension]_id)
-      - Add FK to fact table (with the PRAGMA foreign_keys = ON)
-      - Keep original column values as attributes
-   b) For numeric columns:
-      - Keep in fact table as measures
+---
 
-3. VALIDATE:
-   - Verify count(original columns) = 
-     count(fact table columns) + 
-     count(dimension attributes)
-   - Confirm no descriptive attributes remain in fact table
-   - Ensure all FKs reference existing PKs
+### Fact Table Construction Steps:
+
+1. Analyze Columns:
+   - Detect which are categorical (dimension candidates)  
+   - Detect numeric measures  
+   - Evaluate cardinality of each column
+
+2. Transform:
+   a. Categorical columns →  
+      - Create dimension tables  
+      - Generate surrogate keys (`[dimension]_id`)  
+      - Replace original column in fact table with FK  
+      - Store original values as attributes in the dimension  
+   b. Numeric columns →  
+      - Keep as measures in fact table
+
+3. Validate Schema:
+   - Confirm:  
+     number of original CSV columns == (number of fact table columns + number of all dimension attributes)  
+   - Fact table must not contain descriptive text columns  
+   - All foreign keys must reference valid dimension table primary keys
+
+---
 
 ### Output Requirements:
-1. Database file: {db_path} with:
-   - Enabled foreign key constraints
-   - Proper SQL data types
-2. Schema documentation: {schema_path} containing:
-   - json/txt report with table definitions showing column mapping
-   - Preservation verification
 
-### Special Handling:
-- For ambiguous columns, prefer keeping in fact table
-- Automatically detect date/time columns for special handling
-- Use conservative data typing (TEXT when uncertain)
-        """
+1. SQLite Database File: `{db_path}` must include:
+   - Correct star schema structure
+   - Foreign key constraints enabled
+   - Use appropriate SQL data types (default to `TEXT` if unsure)
+
+2. Schema Documentation File: `{schema_path}` must include:
+   - Text or JSON format
+   - Mapping of each original CSV column to either a dimension attribute or fact column
+   - Confirmation that all original columns were preserved
+
+---
+
+### Special Handling Rules:
+
+- For ambiguous cases, prefer keeping the column in the fact table
+- Always detect and process timestamp/date columns as date dimensions
+- Use conservative typing: choose `TEXT` when the correct type is uncertain
+"""
         
         generator.initiate_chat(
             executor,
