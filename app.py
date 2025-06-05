@@ -198,6 +198,7 @@ Transform CSV file at `{csv_path}` into a star schema SQLite database with autom
 - Name format: `fact_[descriptive_name]`
 - Contains ONLY: foreign keys + numeric measures
 - Foreign key format: `[dimension_name]_id`
+NOTE: Foreign key references MUST be actual columns in the fact table schema, not just metadata
 
 **Dimension Tables:**
 - Name format: `dim_[dimension_name]`
@@ -218,12 +219,27 @@ Execute these analysis tasks:
 ### Step 2: Dimension Grouping Strategy
 Apply these rules in order:
 
-**A. Logical Grouping (Priority 1)**
-- Group semantically related columns together
-- Examples:
-  - Names + contact info → `dim_person`
-  - Address components → `dim_location`
-  - Date/time fields → `dim_date`
+**A. Logical grouping Dimensions (Priority 2)**
+1. Identify all columns that belong to core dimensions (like person, location, time, product, etc.)
+2. For each dimension:
+   - Suggest a dimension name (prefix with "dim_")
+   - List all columns that belong to it
+   - Identify a natural primary key
+   - Note any slowly changing dimension attributes
+3. Output in this format:
+
+Suggested Dimensions:
+1. dim_[name]:
+   - Columns: [comma-separated list]
+   - Suggested PK: [column]
+   - SCD Type: [1/2/3 if applicable]
+
+Example output:
+Suggested Dimensions:
+1. dim_person:
+   - Columns: customer_id, customer_name, birth_date, gender
+   - Suggested PK: customer_id
+   - SCD Type: 2 (for name changes)
 
 **B. Standard Dimensions (Priority 2)**
 - Always create if data exists:
