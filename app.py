@@ -178,120 +178,88 @@ def generate_dwh_for_user(csv_path):
         initial_message = f"""
 Create a SQLite data warehouse from: {csv_path}
 
-### STRICT REQUIREMENTS:
-1. **Complete Column Preservation**:
-   - Every original column must exist in either:
-     * Fact table (as measure or FK)
-     * Dimension table (as attribute)
-   - Validation: `original_columns == (fact_columns ∪ dim_attributes)`
+### Requirements:
+1. Automatic schema detection that works for ANY CSV file
+2. Complete column preservation via:
+   - All original columns represented in either fact or dimension tables
+   - No duplicate columns (replace originals with FKs)
+3. Proper star schema with:
+   - 1 fact table containing only:
+     * Foreign keys to dimensions (using [dimension]_id with the PRAGMA foreign_keys = ON)
+     * Numeric measures
+   - Dimension tables containing:
+     * Surrogate keys ([dimension]_id)
+     * Descriptive attributes
 
-2. **Professional Dimensional Modeling**:
-   - Fact table contains ONLY:
-     * Foreign keys to dimensions
-     * Numeric/date measures
-   - Dimensions represent BUSINESS ENTITIES (not just columns)
+### Path Requirements:
+- You MUST use EXACTLY these paths:
+  - Database: {db_path}
+  - Schema: {schema_path}
+- Do NOT modify or redirect these paths
+- Confirm final paths match these exactly
 
-### IMPLEMENTATION PROTOCOL:
+**Strict Naming Convention**  
+   - Fact table: `fact_[fact_name]`  
+   - Dimensions: `dim_[dim_name]`  
+   - Keys: `[dimension]_id` (e.g., `gender_id`)
 
-1. PHASE 1: SMART DIMENSION DESIGN
-   a) Auto-group related columns:
-      ```python
-      # Example grouping logic
-      dimension_groups = {
-          'customer': ['first_name', 'last_name', 'email'],
-          'product': ['sku', 'product_name', 'category'],
-          'location': ['country', 'state', 'city']
-      }
-      ```
-   b) Create dimensions:
-      ```sql
-      CREATE TABLE dim_customer (
-          customer_id INTEGER PRIMARY KEY,
-          first_name TEXT,
-          last_name TEXT,
-          email TEXT
-      );
-      ```
+### Implementation Steps:
+    # SMART DIMENSION GROUPING LOGIC
 
-2. PHASE 2: FACT TABLE ENGINEERING
-   a) Build with proper referential integrity:
-      ```sql
-      CREATE TABLE fact_sales (
-          customer_id INTEGER REFERENCES dim_customer(customer_id),
-          product_id INTEGER REFERENCES dim_product(product_id),
-          -- Measures
-          quantity INTEGER,
-          amount DECIMAL(10,2),
-          -- CONSTRAINTS
-          CHECK (quantity > 0)
-      );
-      ```
-   b) Enable foreign keys:
-      ```sql
-      PRAGMA foreign_keys = ON;
-      ```
+### Dimension Design Rules:
+1. **Group Related Columns** into coherent dimensions:
+   - Example: 'FirstName', 'LastName', 'Email' → 'Customer' dimension
+   - NOT: Each as separate dimensions
 
-3. PHASE 3: DATA LOADING
-   a) Load dimensions first:
-      ```sql
-      INSERT INTO dim_customer (first_name, last_name, email)
-      SELECT DISTINCT first_name, last_name, email FROM temp_import;
-      ```
-   b) Load facts with proper FKs:
-      ```sql
-      INSERT INTO fact_sales
-      SELECT 
-          c.customer_id,
-          p.product_id,
-          t.quantity,
-          t.amount
-      FROM temp_import t
-      JOIN dim_customer c ON t.email = c.email
-      JOIN dim_product p ON t.sku = p.sku;
-      ```
+2. **Standard Dimensions** to always create:
+   - Date/Time (from timestamp columns)
+   - Location (if address/geo data exists)
+   - Person (for name/contact info)
 
-### VALIDATION CHECKS (MANDATORY):
-1. **Schema Integrity**:
-   ```sql
-   -- Check all FKs exist
-   SELECT COUNT(*) FROM pragma_foreign_key_list('fact_sales')
-   HAVING COUNT(*) = {expected_fk_count};
-Column Preservation:
+3. **Single-Column Dimensions** ONLY when:
+   - Truly independent attributes
+   - No logical grouping exists
+   - High cardinality (>1000 distinct values)
 
-python
-# Verify no columns were lost
-original = set(df.columns)
-in_dwh = set(fact_cols) | set(dim_attrs)
-assert original == in_dwh, f"Missing: {original - in_dwh}"
-Business Rule Compliance:
+4. **Junk Dimensions** for:
+   - Low-cardinality flags/indicators
+   - Unrelated categorical columns
+   - Example: 'IsActive', 'Priority', 'Status'
 
-sql
--- Example: No negative sales
-SELECT COUNT(*) FROM fact_sales WHERE amount < 0
-HAVING COUNT(*) = 0;
-OUTPUT REQUIREMENTS:
-Database File ({db_path}):
+# ### Fact Table Design Rules: 
+1. ANALYZE the data to:
+   - Detect categorical columns (potential dimensions)
+   - Identify numeric columns (potential facts)
+   - Determine cardinality of each column
 
-Valid star schema
+2. TRANSFORM by:
+   a) For each categorical column:
+      - Create dimension table based on the instructions above
+      - Create surrogate key ([dimension]_id)
+      - Add FK to fact table (with the PRAGMA foreign_keys = ON)
+      - Keep original column values as attributes
+   b) For numeric columns:
+      - Keep in fact table as measures
 
-Enabled foreign keys
+3. VALIDATE:
+   - Verify count(original columns) = 
+     count(fact table columns) + 
+     count(dimension attributes)
+   - Confirm no descriptive attributes remain in fact table
+   - Ensure all FKs reference existing PKs
 
-All constraints enforced
+### Output Requirements:
+1. Database file: {db_path} with:
+   - Enabled foreign key constraints
+   - Proper SQL data types
+2. Schema documentation: {schema_path} containing:
+   - json/txt report with table definitions showing column mapping
+   - Preservation verification
 
-Schema Documentation must be saved in json at ({schema_path}):
-
-FAILURE PROTOCOL:
-If ANY validation fails:
-
-Rollback entire database
-
-Report EXACT failure point
-
-Provide recovery DDL
-
-Clean up artifacts
-
-
+### Special Handling:
+- For ambiguous columns, prefer keeping in fact table
+- Automatically detect date/time columns for special handling
+- Use conservative data typing (TEXT when uncertain)
         """
         
         generator.initiate_chat(
