@@ -178,84 +178,143 @@ def generate_dwh_for_user(csv_path):
         initial_message = f"""
 Create a SQLite data warehouse from: {csv_path}
 
-### Path Requirements:
-- You MUST use EXACTLY these paths:
-  - Database: {db_path}
-  - Schema: {schema_path}
-- Do NOT modify or redirect these paths
-- Confirm final paths match these exactly
+### STRICT REQUIREMENTS:
+1. **Complete Column Preservation**:
+   - Every original column must exist in either:
+     * Fact table (as measure or FK)
+     * Dimension table (as attribute)
+   - Validation: `original_columns == (fact_columns ∪ dim_attributes)`
 
-### STRICT IMPLEMENTATION PROTOCOL
-1. PHASE 1: SCHEMA CREATION
-   a) Create ALL dimension tables FIRST:
-      ```sql
-      CREATE TABLE dim_[column] (
-        [column]_id INTEGER PRIMARY KEY,
-        [column] TEXT
-      );
-      INSERT INTO dim_[column] ([column])
-      SELECT DISTINCT [column] FROM temp_import;
+2. **Professional Dimensional Modeling**:
+   - Fact table contains ONLY:
+     * Foreign keys to dimensions
+     * Numeric/date measures
+   - Dimensions represent BUSINESS ENTITIES (not just columns)
+
+### IMPLEMENTATION PROTOCOL:
+The implementation must be done on the data found at {csv_path}
+1. PHASE 1: SMART DIMENSION DESIGN
+   a) Auto-group related columns:
+      ```python
+      # Example grouping logic
+      dimension_groups = {{
+          'customer': ['first_name', 'last_name', 'email'],
+          'product': ['sku', 'product_name', 'category'],
+          'location': ['country', 'state', 'city']
+      }}
       ```
-   
-   b) Create fact table with EXACT structure:
+   b) Create dimensions:
       ```sql
-      CREATE TABLE fact_data (
-        -- Numeric measures
-        [numeric_columns],
-        -- Foreign keys
-        [column]_id INTEGER REFERENCES dim_[column]([column]_id),
-        ...
+      CREATE TABLE dim_customer (
+          customer_id INTEGER PRIMARY KEY,
+          first_name TEXT,
+          last_name TEXT,
+          email TEXT
       );
       ```
 
-2. PHASE 2: DATA TRANSFORMATION
-   a) Populate dimensions:
+2. PHASE 2: FACT TABLE ENGINEERING
+   a) Build with proper referential integrity:
       ```sql
-      INSERT INTO dim_[column] ([column])
-      SELECT DISTINCT [column] FROM temp_import;
+      CREATE TABLE fact_sales (
+          customer_id INTEGER REFERENCES dim_customer(customer_id),
+          product_id INTEGER REFERENCES dim_product(product_id),
+          -- Measures
+          quantity INTEGER,
+          amount DECIMAL(10,2),
+          -- CONSTRAINTS
+          CHECK (quantity > 0)
+      );
       ```
-   
-   b) Insert fact data with proper FKs:
+   b) Enable foreign keys:
       ```sql
-      INSERT INTO fact_data
+      PRAGMA foreign_keys = ON;
+      ```
+
+3. PHASE 3: DATA LOADING
+   a) Load dimensions first:
+      ```sql
+      INSERT INTO dim_customer (first_name, last_name, email)
+      SELECT DISTINCT first_name, last_name, email FROM temp_import;
+      ```
+   b) Load facts with proper FKs:
+      ```sql
+      INSERT INTO fact_sales
       SELECT 
-        t.[numeric_columns],
-        d.[column]_id,
-        ...
+          c.customer_id,
+          p.product_id,
+          t.quantity,
+          t.amount
       FROM temp_import t
-      JOIN dim_[column] d ON t.[column] = d.[column];
+      JOIN dim_customer c ON t.email = c.email
+      JOIN dim_product p ON t.sku = p.sku;
       ```
 
-3. VALIDATION CHECKS (MANDATORY):
-   a) Column preservation:
-      ```sql
-      SELECT 
-        (SELECT COUNT(*) FROM pragma_table_list()) = [expected_table_count],
-        (SELECT COUNT(*) FROM pragma_table_info('fact_data')) = [expected_fact_columns];
-      ```
-   
-   b) Foreign key verification:
-      ```sql
-      SELECT COUNT(*) FROM pragma_foreign_key_list('fact_data')
-      HAVING COUNT(*) = [expected_fk_count];
-      ```
+### VALIDATION CHECKS (MANDATORY):
+1. **Schema Integrity**:
+   ```sql
+   -- Check all FKs exist
+   SELECT COUNT(*) FROM pragma_foreign_key_list('fact_sales')
+   HAVING COUNT(*) = {expected_fk_count};
+Column Preservation:
 
-### OUTPUT REQUIREMENTS
-1. Database MUST contain:
-   - Fact table with ALL specified columns
-   - Dimension tables with surrogate keys
-   - Verified foreign key relationships
+python
+# Verify no columns were lost
+original = set(df.columns)
+in_dwh = set(fact_cols) | set(dim_attrs)
+assert original == in_dwh, f"Missing: {original - in_dwh}"
+Business Rule Compliance:
 
-2. Schema documentation MUST show:
-   - Complete column mapping
-   - Validation results
-   - Any deviations from requirements
+sql
+-- Example: No negative sales
+SELECT COUNT(*) FROM fact_sales WHERE amount < 0
+HAVING COUNT(*) = 0;
+OUTPUT REQUIREMENTS:
+Database File ({db_path}):
 
-### FAILURE PROTOCOL
+Valid star schema
+
+Enabled foreign keys
+
+All constraints enforced
+
+Schema Documentation ({schema_path}):
+
+   ```json
+    {{
+      "schema": {{
+        "fact_table": {{
+          "name": "fact_sales",
+          "measures": ["quantity", "amount"],
+          "foreign_keys": [
+            {{"column": "customer_id", "references": "dim_customer(customer_id)"}}
+          ]
+        }},
+        "dimensions": {{
+          "dim_customer": {{
+            "attributes": ["first_name", "last_name", "email"],
+            "record_count": 2450
+          }}
+        }}
+      }},
+      "preservation_report": {{
+        "original_columns": 15,
+        "mapped_columns": 15,
+        "status": "COMPLETE"
+      }}
+    }}
+    ```
+FAILURE PROTOCOL:
 If ANY validation fails:
-1. Rollback entire database
-2. Report EXACT missing elements
-3. Provide recovery DDL
+
+Rollback entire database
+
+Report EXACT failure point
+
+Provide recovery DDL
+
+Clean up artifacts
+
         """
         
         generator.initiate_chat(
