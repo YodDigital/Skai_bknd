@@ -197,11 +197,11 @@ The implementation must be done on the data found at {csv_path}
    a) Auto-group related columns:
       ```python
       # Example grouping logic
-      dimension_groups = {
+      dimension_groups = {{
           'customer': ['first_name', 'last_name', 'email'],
           'product': ['sku', 'product_name', 'category'],
           'location': ['country', 'state', 'city']
-      }
+      }}
       ```
    b) Create dimensions:
       ```sql
@@ -255,7 +255,7 @@ The implementation must be done on the data found at {csv_path}
    ```sql
    -- Check all FKs exist
    SELECT COUNT(*) FROM pragma_foreign_key_list('fact_sales')
-   HAVING COUNT(*) = expected_fk_count;
+   HAVING COUNT(*) = {expected_fk_count};
 Column Preservation:
 
 python
@@ -278,9 +278,32 @@ Enabled foreign keys
 
 All constraints enforced
 
-Schema Documentation must be saved as a json at ({schema_path}):
+Schema Documentation ({schema_path}):
 
-
+   ```json example
+    {{
+      "schema": {{
+        "fact_table": {{
+          "name": "fact_sales",
+          "measures": ["quantity", "amount"],
+          "foreign_keys": [
+            {{"column": "customer_id", "references": "dim_customer(customer_id)"}}
+          ]
+        }},
+        "dimensions": {{
+          "dim_customer": {{
+            "attributes": ["first_name", "last_name", "email"],
+            "record_count": 2450
+          }}
+        }}
+      }},
+      "preservation_report": {{
+        "original_columns": 15,
+        "mapped_columns": 15,
+        "status": "COMPLETE"
+      }}
+    }}
+    ```
 FAILURE PROTOCOL:
 If ANY validation fails:
 
