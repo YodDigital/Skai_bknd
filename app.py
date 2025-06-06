@@ -176,190 +176,199 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-# SQLite Data Warehouse Generation Task
+# SQLite Star Schema Database Creator
 
-## OBJECTIVE
-Transform CSV file at `{csv_path}` into a star schema SQLite database with automatic schema detection and complete data preservation.
+## PRIMARY OBJECTIVE
+Create a WORKING SQLite database at `{db_path}` with functional foreign key relationships. Documentation is secondary.
 
-## MANDATORY OUTPUT PATHS
-- Database file: `{db_path}`
-- Schema documentation: `{schema_path}`
-- **CRITICAL**: Use these exact paths without modification
+## MANDATORY DELIVERABLES
+1. **WORKING SQLite database** at `{db_path}` (PRIMARY)
+2. Schema documentation at `{schema_path}` (SECONDARY)
 
-## CORE REQUIREMENTS
-
-### 1. Data Preservation Rule
-- Every original CSV column MUST appear in final database
-- No data loss permitted
-- Replace original columns with foreign keys where appropriate
-
-### 2. Star Schema Structure
-**Fact Table:**
-- Name format: `fact_[descriptive_name]`
-- Contains ONLY: foreign keys + numeric measures
-- Foreign key format: `[dimension_name]_id`
-NOTE: Foreign key references MUST be actual columns in the fact table schema, not just metadata
-
-**Dimension Tables:**
-- Name format: `dim_[dimension_name]`
-- Contains: surrogate key + descriptive attributes
-- Primary key format: `[dimension_name]_id`
-
-## STEP-BY-STEP PROCESS
-
-### Step 1: CSV Analysis
-Execute these analysis tasks:
-1. Load CSV and examine all columns
-2. Classify each column as:
-   - Categorical (potential dimension)
-   - Numeric (potential fact measure)
-   - Date/Time (special dimension)
-3. Calculate distinct value count for each column
-
-### Step 2: Dimension Grouping Strategy
-Apply these rules in order:
-
-**A. Logical grouping Dimensions (Priority 2)**
-1. Identify all columns that belong to core dimensions (like person, location, time, product, etc.)
-2. For each dimension:
-   - Suggest a dimension name (prefix with "dim_")
-   - List all columns that belong to it
-   - Identify a natural primary key
-   - Note any slowly changing dimension attributes
-3. Output in this format:
-
-Suggested Dimensions:
-1. dim_[name]:
-   - Columns: [comma-separated list]
-   - Suggested PK: [column]
-   - SCD Type: [1/2/3 if applicable]
-
-Example output:
-Suggested Dimensions:
-1. dim_person:
-   - Columns: customer_id, customer_name, birth_date, gender
-   - Suggested PK: customer_id
-   - SCD Type: 2 (for name changes)
-
-**B. Standard Dimensions (Priority 2)**
-- Always create if data exists:
-  - Date dimension (from any timestamp columns)
-  - Location dimension (from address/geo data)
-  - Person dimension (from name/contact fields)
-
-**C. Single Column Dimensions (Priority 3)**
-- Create only when:
-  - Column has >1000 distinct values, OR
-  - No logical grouping possible, OR
-  - Truly independent attribute
-
-**D. Junk Dimension (Priority 4)**
-- Combine low-cardinality categorical columns
-- Include flags, status indicators, small enums
-- Name: `dim_misc` or `dim_flags`
-
-### Step 3: Database Creation
-Execute in this sequence:
-1. Create SQLite database at `{db_path}`
-2. Enable foreign key constraints: `PRAGMA foreign_keys = ON`
-3. Create dimension tables with surrogate keys:
-   ```sql
-   CREATE TABLE dim_[name] (
-       [name]_id INTEGER PRIMARY KEY AUTOINCREMENT,
-       [original_column] TEXT
-   );
-   ```
-4. **CRITICAL**: Create fact table with ACTUAL foreign key columns:
-   ```sql
-   CREATE TABLE fact_[name] (
-       -- Foreign key columns (must exist as actual columns)
-       dimension1_id INTEGER REFERENCES dim_dimension1(dimension1_id),
-       dimension2_id INTEGER REFERENCES dim_dimension2(dimension2_id),
-       -- Numeric measure columns
-       measure1 REAL,
-       measure2 REAL
-   );
-   ```
-5. Insert dimension data and capture surrogate keys
-6. Insert fact data using surrogate keys from dimensions
-
-### Step 4: Validation Checklist
-Verify these conditions:
-- [ ] All original columns accounted for
-- [ ] Fact table contains ACTUAL foreign key columns (not just metadata)
-- [ ] Foreign key columns exist as real columns in fact table schema
-- [ ] All foreign keys reference existing primary keys
-- [ ] Can successfully JOIN fact table with dimension tables
-- [ ] Database file exists at exact path `{db_path}`
-- [ ] Schema documentation exists at exact path `{schema_path}`
-
-## COMMON ERROR PREVENTION
-**Foreign Key Implementation:**
-- Do NOT just document foreign keys in schema - CREATE them as actual columns
-- Each foreign key must be a real INTEGER column in the fact table
-- Test joins after creation to ensure foreign keys work
-- Example: If you have dim_gender, fact table must have actual column named gender_id
-
-## DATA TYPE GUIDELINES
-- Use TEXT for uncertain data types
-- Use INTEGER for whole numbers
-- Use REAL for decimal numbers
-- Use TEXT for dates (unless specific format needed)
-
-## NAMING CONVENTIONS
-- Fact table: `fact_[business_process]`
-- Dimension tables: `dim_[dimension_concept]`
-- Primary keys: `[table_name_without_prefix]_id`
-- Foreign keys: `[referenced_dimension]_id`
-
-## OUTPUT DOCUMENTATION
-Create txt file at containing:
-1. **Actual table schemas** with column definitions (not just metadata)
-2. Original column → final location mapping
-3. **Verification that foreign key columns exist in fact table**
-4. Test query examples proving joins work
-5. Data preservation verification summary
-
-## CRITICAL IMPLEMENTATION REQUIREMENTS
-
-### Foreign Key Column Creation
-**WRONG**: Only documenting foreign keys in schema metadata
-```json
-"foreign_keys": ["Gender_id", "Department_id"]  // This is just documentation
+## CRITICAL SUCCESS TEST
+Your implementation MUST pass this test query without errors:
+```sql
+-- This query MUST work or the task has failed
+SELECT COUNT(*) as total_joins
+FROM fact_[tablename] f
+JOIN dim_[dimension1] d1 ON f.[dimension1]_id = d1.[dimension1]_id
+JOIN dim_[dimension2] d2 ON f.[dimension2]_id = d2.[dimension2]_id;
 ```
 
-**CORRECT**: Actually creating foreign key columns in fact table
+## IMPLEMENTATION SEQUENCE
+
+### Phase 1: Analysis and Planning
+1. **Load and analyze CSV structure found at {csv_path}** 
+2. **Identify categorical vs numeric columns**
+3. **Plan dimension grouping** using these priorities:
+   - Group related columns (customer info, address components, product details)
+   - Create date dimensions from timestamp columns
+   - Single-column dimensions only for high-cardinality (>1000 values)
+   - Junk dimensions for low-cardinality flags/statuses
+
+### Phase 2: Database Creation (CRITICAL PHASE)
 ```sql
+-- Step 1: Create database and enable constraints
+PRAGMA foreign_keys = ON;
+
+-- Step 2: Create dimension tables with surrogate keys
+CREATE TABLE dim_customer (
+    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name TEXT,
+    contact_first_name TEXT,
+    contact_last_name TEXT,
+    phone TEXT
+);
+
+-- Step 3: Create fact table with ACTUAL foreign key columns
 CREATE TABLE fact_sales (
-    Gender_id INTEGER REFERENCES dim_Gender(Gender_id),        -- Real column
-    Department_id INTEGER REFERENCES dim_Department(Department_id), -- Real column
-    MonthlyIncome REAL,
-    Age REAL
+    -- THESE MUST BE REAL COLUMNS, NOT METADATA
+    customer_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    order_date_id INTEGER NOT NULL,
+    -- Measures
+    quantity_ordered REAL,
+    price_each REAL,
+    sales REAL,
+    -- Foreign key constraints
+    FOREIGN KEY (customer_id) REFERENCES dim_customer(customer_id),
+    FOREIGN KEY (product_id) REFERENCES dim_product(product_id),
+    FOREIGN KEY (order_date_id) REFERENCES dim_order_date(order_date_id)
 );
 ```
 
-### Verification Test
-After creation, this query MUST work:
+### Phase 3: Data Population
+1. **Insert dimension data first**
+2. **Capture generated surrogate keys**
+3. **Insert fact data using surrogate keys**
+4. **Verify referential integrity**
+
+### Phase 4: Validation (MANDATORY)
+Execute these validation queries - ALL must succeed:
+
 ```sql
-SELECT f.*, d.Gender 
-FROM fact_sales f 
-JOIN dim_Gender d ON f.Gender_id = d.Gender_id 
-LIMIT 1;
+-- Test 1: Verify foreign key columns exist
+.schema fact_[tablename]
+-- Must show actual foreign key columns, not just measures
+
+-- Test 2: Test joins work
+SELECT COUNT(*) FROM fact_[tablename] f
+JOIN dim_[dimension] d ON f.[dimension]_id = d.[dimension]_id;
+
+-- Test 3: Verify all original data is preserved
+SELECT COUNT(*) FROM fact_[tablename];
+-- Must match original CSV row count
+
+-- Test 4: Check referential integrity
+PRAGMA foreign_key_check;
+-- Must return no violations
 ```
 
-## ERROR PREVENTION NOTES
-- Validate file paths before starting
-- Check CSV structure before processing
-- Test foreign key constraints after creation
-- Verify row counts match between original and final data
-- Handle NULL values appropriately in dimension tables
+## DIMENSION GROUPING RULES
+
+### Smart Grouping (Apply First)
+- **Customer Dimension**: customer_name, contact_first_name, contact_last_name, phone
+- **Address Dimension**: address_line1, address_line2, city, state, postal_code, country
+- **Product Dimension**: product_code, product_line, msrp
+- **Date Dimension**: order_date (split into date components)
+
+### Avoid Over-Segmentation
+**WRONG**: Creating separate dimensions for each address component
+```
+dim_city, dim_state, dim_country, dim_postal_code
+```
+
+**CORRECT**: Group related attributes
+```
+dim_address (city, state, country, postal_code)
+```
+
+## COMMON FAILURE PATTERNS TO AVOID
+
+### 1. Metadata-Only Foreign Keys
+**WRONG**: 
+```json
+"foreign_keys": ["customer_id", "product_id"]  // Just documentation
+```
+
+**CORRECT**: 
+```sql
+CREATE TABLE fact_sales (
+    customer_id INTEGER,  -- Actual column
+    product_id INTEGER,   -- Actual column
+    sales REAL
+);
+```
+
+### 2. No Actual Database Creation
+- Don't just create documentation
+- Must create actual .db file at specified path
+- Must be queryable with SQL
+
+### 3. Missing Foreign Key Constraints
+```sql
+-- WRONG: No constraints
+CREATE TABLE fact_sales (customer_id INTEGER, sales REAL);
+
+-- CORRECT: With constraints
+CREATE TABLE fact_sales (
+    customer_id INTEGER REFERENCES dim_customer(customer_id),
+    sales REAL
+);
+```
+
+## VALIDATION CHECKLIST
+- [ ] SQLite database file exists at `{db_path}`
+- [ ] Fact table contains foreign key columns (not just measures)
+- [ ] All dimension tables have surrogate primary keys
+- [ ] Foreign key constraints are defined and working
+- [ ] Test joins execute successfully
+- [ ] Row counts match between original CSV and fact table
+- [ ] PRAGMA foreign_key_check returns no violations
+
+## OUTPUT REQUIREMENTS
+
+### Primary: Working Database
+- Functional SQLite file at `{db_path}`
+- All tables created with proper relationships
+- Data fully loaded and queryable
+
+### Secondary: Documentation at `{schema_path}`
+```
+DATABASE SCHEMA VERIFICATION
+============================
+
+FACT TABLE: fact_[name]
+Columns: [list actual columns including foreign keys]
+
+DIMENSION TABLES:
+- dim_[name]: [columns]
+- dim_[name]: [columns]
+
+VALIDATION RESULTS:
+✓ Foreign key columns exist in fact table
+✓ All joins execute successfully
+✓ Data preservation verified: [original_rows] = [fact_rows]
+✓ Foreign key constraints active
+
+SAMPLE WORKING QUERY:
+[Include actual query that demonstrates joins work]
+```
+
+## FAILURE CONDITIONS
+Task is FAILED if any of these occur:
+- Database file not created at specified path
+- Fact table missing foreign key columns
+- Cannot join fact table with dimensions
+- Foreign key constraints not working
+- Data loss during transformation
 
 ## SUCCESS CRITERIA
-1. SQLite database and schema were created at {db_path}  and {schema_path} respectively
-2. All original data preserved and accessible
-3. Valid star schema structure implemented
-4. Foreign key constraints functional
-5. Complete documentation generated
+1. **Database functionality**: All validation queries execute successfully
+2. **Data preservation**: No data lost in transformation
+3. **Proper star schema**: Clean fact/dimension separation
+4. **Working relationships**: Foreign keys enable joins
+5. **Path compliance**: Files created at exact specified paths
 """
         
         generator.initiate_chat(
