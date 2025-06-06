@@ -181,6 +181,11 @@ def generate_dwh_for_user(csv_path):
 ## OBJECTIVE
 Transform ANY CSV file at `{csv_path}` into a properly grouped star schema SQLite database with intelligent dimension grouping.
 
+## MANDATORY OUTPUT PATHS
+- Database file: `{db_path}`
+- Schema documentation: `{schema_path}`
+- **CRITICAL**: Use these exact paths without modification
+
 ## CRITICAL CONSTRAINT: MAXIMUM 8 DIMENSIONS ALLOWED
 **Your solution will be REJECTED if you create more than 8 dimension tables total.**
 
