@@ -168,7 +168,7 @@ def generate_dwh_for_user(csv_path):
     os.system(f"cp {csv_path} {user_csv_path}")
     
     db_path = str((user_work_dir / "database.db").resolve())
-    schema_path = str((user_work_dir / "schema_description.json").resolve())
+    schema_path = str((user_work_dir / "database.json").resolve())
     
     generator = create_dwh_agent(llm_config)
     executor = create_executor_agent(user_work_dir)
