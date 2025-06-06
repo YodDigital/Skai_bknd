@@ -179,7 +179,7 @@ def generate_dwh_for_user(csv_path):
 # UNIVERSAL STAR SCHEMA DATABASE CREATOR
 
 ## OBJECTIVE
-Transform ANY CSV file at `{csv_path}` into a properly grouped star schema SQLite database with intelligent dimension grouping.
+Transform ANY CSV file at the exact path`{csv_path}` into a properly grouped star schema SQLite database with intelligent dimension grouping.
 
 ## MANDATORY OUTPUT PATHS
 - Database file: `{db_path}`
