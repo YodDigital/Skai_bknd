@@ -219,7 +219,7 @@ CREATE TABLE fact_table (
 # Validate constraints work:
 violations = conn.execute("PRAGMA foreign_key_check").fetchall()
 if violations:
-    raise Exception(f"Foreign key violations detected: {violations}")
+    raise Exception(f"Foreign key violations detected: [violations]")
 ```
 
 ## VALIDATION REQUIREMENTS:
