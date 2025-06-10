@@ -226,7 +226,7 @@ CREATE TABLE fact_table (
 # Validate constraints work:
 violations = conn.execute("PRAGMA foreign_key_check").fetchall()
 if violations:
-    raise Exception(f"Foreign key violations detected: {violations}")
+    raise Exception(f"Foreign key violations detected: [violations]")
 ```
 
 ## VALIDATION REQUIREMENTS:
@@ -245,12 +245,12 @@ if violations:
 # Count dimensions and validate
 dimension_count = len([table for table in tables if table.startswith('dim_')])
 if dimension_count > 8:
-    raise Exception(f"TOO MANY DIMENSIONS: {dimension_count}/8. Must group related columns together!")
+    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count]/8. Must group related columns together!")
 
 # Validate proper grouping (no single-column dimensions)
 for dim_name, columns in dimension_groups.items():
     if len(columns) < 2:
-        raise Exception(f"Invalid grouping: {dim_name} has only {len(columns)} column(s). Group related columns together!")
+        raise Exception(f"Invalid grouping: [dim_name] has only [len(columns)] column(s). Group related columns together!")
 ```
 
 ## IMPLEMENTATION STEPS:
