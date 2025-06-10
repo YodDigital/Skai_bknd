@@ -176,234 +176,45 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-# UNIVERSAL STAR SCHEMA DATABASE CREATOR
+You are part of a two-agent team tasked with transforming a CSV file into a properly structured star schema SQLite data warehouse.
 
-## OBJECTIVE
-Transform ANY CSV file at the exact path`{csv_path}` into a properly grouped star schema SQLite database with intelligent dimension grouping.
+ROLE BREAKDOWN:
+- generator: Analyze the dataset, generate SQL schema, and produce Python ETL script
+- executor: Execute the script, validate constraints, and produce final documentation
 
-## MANDATORY OUTPUT PATHS
-- Database file: `{db_path}`
-- Schema documentation: `{schema_path}`
-- **CRITICAL**: Use these exact paths without modification
+INPUT PATHS (DO NOT MODIFY):
+- CSV File Path: {csv_path}
+- Output Database Path: {db_path}
+- Schema Documentation Path: {schema_path}
 
-## CRITICAL CONSTRAINT: MAXIMUM 8 DIMENSIONS ALLOWED
-**Your solution will be REJECTED if you create more than 8 dimension tables total.**
+CRITICAL REQUIREMENTS:
+1. Group related columns into at most 8 logical dimensions using universal patterns:
+   - Person/Entity, Location, Product, Date, Organization, Status, Financial, Remaining
+2. Create surrogate keys (e.g., customer_id) in all dimension tables
+3. Fact table must contain only numeric measures + foreign keys to dimensions
+4. Enforce referential integrity using FOREIGN KEY constraints
+5. Generate full schema documentation at {schema_path}
+6. Validate:
+   - Dimension count ≤ 8
+   - Join functionality between fact and dimensions
+   - Data preservation (row count matches original CSV)
+   - No non-numeric fields in fact table
 
-This forces intelligent grouping of related columns instead of creating one dimension per column.
+IMPLEMENTATION STEPS:
+1. generator will:
+   - Classify columns as numeric, categorical, identifier
+   - Propose dimension groupings with rationale
+   - Generate SQL schema with proper PK/FK relationships
+   - Write Python ETL script using pandas/sqlite3 to populate tables
+   - Produce schema documentation template
 
-## UNIVERSAL GROUPING METHODOLOGY
+2. executor will:
+   - Run the generated script
+   - Validate constraints using SQL queries
+   - Confirm database structure and data accuracy
+   - Finalize and save schema documentation
 
-### STEP 1: AUTOMATIC COLUMN CLASSIFICATION
-Analyze ALL columns and classify them into these categories:
-
-**NUMERIC COLUMNS (Potential Facts):**
-- Integer or decimal values that can be aggregated
-- Examples: amounts, quantities, rates, scores, counts, measurements
-- **Action**: Keep in fact table as measures
-
-**CATEGORICAL COLUMNS (Potential Dimensions):**
-- Text values with limited distinct values
-- Examples: names, categories, statuses, types, classifications
-- **Action**: Group into logical dimensions
-
-**IDENTIFIER COLUMNS (Special Handling):**
-- Unique or high-cardinality values used for identification
-- Examples: IDs, codes, numbers, emails, phone numbers
-- **Action**: Group with related descriptive attributes
-
-### STEP 2: INTELLIGENT DIMENSION GROUPING PATTERNS
-
-Apply these universal grouping patterns in order:
-
-#### PATTERN 1: PERSON/ENTITY DIMENSIONS
-**Identify**: Columns containing names, contact info, or personal attributes
-**Keywords**: name, first, last, contact, email, phone, title, manager
-**Group into**: `dim_person`, `dim_customer`, `dim_employee`, `dim_contact`
-**Example**: first_name + last_name + email + phone → dim_person
-
-#### PATTERN 2: LOCATION/GEOGRAPHY DIMENSIONS  
-**Identify**: Columns containing address, geographic, or location data
-**Keywords**: address, street, city, state, country, zip, postal, region, territory
-**Group into**: `dim_location`, `dim_address`, `dim_geography`
-**Example**: street + city + state + country → dim_location
-
-#### PATTERN 3: PRODUCT/ITEM DIMENSIONS
-**Identify**: Columns describing products, items, or services
-**Keywords**: product, item, service, code, category, type, model, brand
-**Group into**: `dim_product`, `dim_item`, `dim_service`
-**Example**: product_code + product_name + category → dim_product
-
-#### PATTERN 4: TIME/DATE DIMENSIONS
-**Identify**: Any date, time, or temporal columns
-**Keywords**: date, time, year, month, day, quarter, period
-**Group into**: `dim_date`, `dim_time`
-**Example**: order_date + delivery_date → dim_date
-
-#### PATTERN 5: ORGANIZATIONAL DIMENSIONS
-**Identify**: Columns describing organizational structure
-**Keywords**: department, division, team, unit, branch, office
-**Group into**: `dim_organization`, `dim_department`
-**Example**: department + division + manager → dim_organization
-
-#### PATTERN 6: STATUS/CLASSIFICATION DIMENSIONS
-**Identify**: Columns with status, category, or classification values
-**Keywords**: status, type, class, category, grade, level, priority
-**Group into**: `dim_status`, `dim_classification`, `dim_business_attributes`
-**Example**: status + priority + type → dim_business_attributes
-
-#### PATTERN 7: FINANCIAL/BUSINESS DIMENSIONS
-**Identify**: Columns describing financial or business context (non-numeric)
-**Keywords**: account, budget, cost_center, project, campaign
-**Group into**: `dim_financial`, `dim_business_context`
-**Example**: account_type + cost_center + project → dim_financial
-
-#### PATTERN 8: REMAINING SINGLE-COLUMN DIMENSIONS
-**For columns that don't fit any pattern:**
-- High cardinality (>1000 distinct values): Create individual dimension
-- Low cardinality (<10 distinct values): Combine into junk dimension
-- Medium cardinality: Group by semantic similarity
-
-## STEP-BY-STEP IMPLEMENTATION
-
-### PHASE 1: MANDATORY ANALYSIS OUTPUT
-Before creating ANY tables, output this analysis:
-
-```
-DATASET ANALYSIS FOR: {csv_path}
-=====================================
-
-COLUMN CLASSIFICATION:
-- Numeric columns (→ Fact measures): [list]
-- Categorical columns (→ Dimensions): [list]
-- Identifier columns (→ Group with related): [list]
-
-DIMENSION GROUPING PLAN:
-1. dim_[name]: 
-   - Columns: [list]
-   - Pattern: [person/location/product/etc.]
-   - Justification: [why these belong together]
-
-2. dim_[name]:
-   - Columns: [list]  
-   - Pattern: [pattern type]
-   - Justification: [grouping logic]
-
-[Continue for all dimensions...]
-
-TOTAL DIMENSIONS PLANNED: [must be ≤ 8]
-
-FACT TABLE MEASURES: [list numeric columns]
-```
-
-### PHASE 2: ADAPTIVE SCHEMA CREATION
-
-```sql
--- Template - adapt column names to your actual data:
-
--- Create grouped dimensions based on your analysis
-CREATE TABLE dim_[group_name] (
-    [group_name]_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    [actual_column1] TEXT,
-    [actual_column2] TEXT,
-    [actual_column3] TEXT
-    -- Include ALL columns that belong to this logical group
-);
-
--- Create fact table with foreign keys + measures
-CREATE TABLE fact_[business_process] (
-    -- Foreign keys to dimensions (MUST be actual columns)
-    [dimension1]_id INTEGER NOT NULL,
-    [dimension2]_id INTEGER NOT NULL,
-    [dimension3]_id INTEGER NOT NULL,
-    
-    -- Numeric measures only
-    [measure1] REAL,
-    [measure2] REAL,
-    [measure3] INTEGER,
-    
-    -- Foreign key constraints
-    FOREIGN KEY ([dimension1]_id) REFERENCES dim_[dimension1]([dimension1]_id),
-    FOREIGN KEY ([dimension2]_id) REFERENCES dim_[dimension2]([dimension2]_id),
-    FOREIGN KEY ([dimension3]_id) REFERENCES dim_[dimension3]([dimension3]_id)
-);
-```
-
-### PHASE 3: UNIVERSAL VALIDATION
-
-Your solution MUST pass these checks regardless of dataset:
-
-```sql
--- CHECK 1: Dimension count constraint
-SELECT COUNT(*) as dimension_count 
-FROM sqlite_master 
-WHERE type='table' AND name LIKE 'dim_%';
--- MUST return ≤ 8
-
--- CHECK 2: Fact table structure
-.schema fact_%
--- MUST show foreign key columns + measures only
-
--- CHECK 3: Join functionality test
-SELECT COUNT(*) 
-FROM fact_[table] f
-JOIN dim_[dimension1] d1 ON f.[dimension1]_id = d1.[dimension1]_id
-JOIN dim_[dimension2] d2 ON f.[dimension2]_id = d2.[dimension2]_id;
--- MUST execute without errors
-
--- CHECK 4: Data preservation
-SELECT COUNT(*) FROM fact_[table];
--- MUST match original CSV row count
-```
-
-## ADAPTIVE GROUPING EXAMPLES
-
-### Example 1: HR Dataset
-**Original columns**: employee_id, first_name, last_name, email, department, salary, hire_date, manager_name
-**Grouping**:
-- dim_employee: employee_id, first_name, last_name, email, manager_name
-- dim_department: department  
-- dim_date: hire_date
-- fact_hr: employee_id, department_id, date_id, salary
-
-### Example 2: E-commerce Dataset  
-**Original columns**: order_id, customer_email, product_sku, product_name, category, price, quantity, ship_address, ship_city
-**Grouping**:
-- dim_customer: customer_email
-- dim_product: product_sku, product_name, category
-- dim_location: ship_address, ship_city
-- fact_orders: customer_id, product_id, location_id, order_id, price, quantity
-
-### Example 3: Survey Dataset
-**Original columns**: respondent_id, age, gender, education, question1_score, question2_score, completion_date, survey_type
-**Grouping**:
-- dim_respondent: respondent_id, age, gender, education
-- dim_survey: survey_type
-- dim_date: completion_date
-- fact_responses: respondent_id, survey_id, date_id, question1_score, question2_score
-
-## REJECTION CRITERIA (Universal)
-
-Your solution will be REJECTED if:
-
-1. **More than 8 dimensions created** (violates constraint)
-2. **Poor grouping**: Related columns in separate dimensions
-3. **No foreign keys in fact table**: Only measures present
-4. **Non-functional joins**: Cannot execute multi-table queries
-5. **Data loss**: Row count doesn't match original
-6. **Mixed data types in fact**: Non-numeric columns in fact table
-
-## UNIVERSAL SUCCESS CRITERIA
-
-1. **≤ 8 dimensions total** with intelligent grouping
-2. **Working foreign key relationships** (joins execute)
-3. **Complete data preservation** (no rows lost)
-4. **Clean separation**: Fact table = FKs + measures only
-5. **Semantic grouping**: Related columns grouped logically
-6. **Files at exact paths**: `{db_path}` and `{schema_path}`
-
-## OUTPUT DOCUMENTATION TEMPLATE
-
-```
+EXAMPLE OUTPUT DOCUMENTATION TEMPLATE:
 STAR SCHEMA IMPLEMENTATION REPORT
 =================================
 Dataset: {csv_path}
@@ -414,10 +225,12 @@ CONSTRAINT COMPLIANCE:
 ✓ Intelligent grouping applied based on column semantics
 ✓ Foreign keys implemented in fact table
 ✓ All joins functional
+✓ Data preserved: Yes
+✓ No non-numeric values in fact table
 
 DIMENSION SUMMARY:
-[For each dimension, list:]
 - dim_[name]: [columns included] (Pattern: [pattern type])
+- ...
 
 FACT TABLE:
 - Name: fact_[name]
@@ -435,18 +248,13 @@ VALIDATION RESULTS:
 ✓ Join queries: PASS
 
 SAMPLE QUERY:
-[Include working multi-table join specific to this dataset]
-```
+SELECT ...
+FROM fact_[name] f
+JOIN dim_[dimension1] d1 ON ...
+JOIN dim_[dimension2] d2 ON ...
+WHERE ...;
 
-## ADAPTATION GUIDELINES
-
-- **Column names**: Use actual column names from your CSV
-- **Business context**: Name fact table after the business process (sales, orders, responses, etc.)
-- **Semantic grouping**: Group columns that logically belong together in real-world context
-- **Flexibility**: If standard patterns don't fit, create custom groupings that make business sense
-- **Documentation**: Always explain your grouping decisions in the output
-
-This prompt works with ANY dataset by focusing on universal patterns rather than specific column names.
+Begin execution.
 """
         
         generator.initiate_chat(
