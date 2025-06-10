@@ -191,8 +191,15 @@ You are part of a two-agent team tasked with transforming a CSV file into a prop
 
 ## CRITICAL REQUIREMENTS:
 
-1. Group related columns into at most 8 logical dimensions using universal patterns:
-   - Person/Entity, Location, Product, Date, Organization, Status, Financial, Remaining
+1. **MANDATORY**: Group related columns into **EXACTLY 8 OR FEWER** logical dimensions using these universal patterns:
+   - **Person/Entity**: Customer names, contact info, personal identifiers (CUSTOMERNAME, CONTACTFIRSTNAME, CONTACTLASTNAME, PHONE)
+   - **Location**: ALL address fields together (ADDRESSLINE1, ADDRESSLINE2, CITY, STATE, POSTALCODE, COUNTRY, TERRITORY) 
+   - **Product**: Product identifiers and categories (PRODUCTCODE, PRODUCTLINE)
+   - **Date/Time**: Date fields (ORDERDATE) 
+   - **Organization**: Company/business entities
+   - **Status**: Order status, deal status (STATUS, DEALSIZE)
+   - **Financial**: Currency, payment terms
+   - **Remaining**: Any other categorical columns that don't fit above patterns
 2. Create surrogate keys (e.g., customer_id) in all dimension tables
 3. Fact table must contain only numeric measures + foreign keys to dimensions
 4. **ENFORCE REFERENTIAL INTEGRITY** using FOREIGN KEY constraints
@@ -219,27 +226,43 @@ CREATE TABLE fact_table (
 # Validate constraints work:
 violations = conn.execute("PRAGMA foreign_key_check").fetchall()
 if violations:
-    raise Exception(f"Foreign key violations detected: [violations]")
+    raise Exception(f"Foreign key violations detected: {violations}")
 ```
 
 ## VALIDATION REQUIREMENTS:
 
-Your script must validate:
-- ✓ Dimension count ≤ 8
+**CRITICAL**: Your script must validate and FAIL if any requirement is not met:
+- ✓ **Dimension count ≤ 8** (HARD LIMIT - script must count and error if exceeded)
+- ✓ **No single-column dimensions** (each dimension must contain multiple related columns)
 - ✓ `PRAGMA foreign_keys = ON` enabled
 - ✓ `PRAGMA foreign_key_check` returns empty (no violations)
 - ✓ Join functionality between fact and dimensions works
 - ✓ Data preservation (row count matches original CSV)
 - ✓ No non-numeric fields in fact table (except FKs)
 
+**DIMENSION VALIDATION CODE REQUIRED**:
+```python
+# Count dimensions and validate
+dimension_count = len([table for table in tables if table.startswith('dim_')])
+if dimension_count > 8:
+    raise Exception(f"TOO MANY DIMENSIONS: {dimension_count}/8. Must group related columns together!")
+
+# Validate proper grouping (no single-column dimensions)
+for dim_name, columns in dimension_groups.items():
+    if len(columns) < 2:
+        raise Exception(f"Invalid grouping: {dim_name} has only {len(columns)} column(s). Group related columns together!")
+```
+
 ## IMPLEMENTATION STEPS:
 
 1. **code_generator_agent** will:
    - Classify columns as numeric, categorical, identifier
-   - Propose dimension groupings with rationale
+   - **INTELLIGENTLY GROUP** related columns (e.g., all address fields = 1 location dimension)
+   - **VALIDATE dimension count ≤ 8 BEFORE proceeding**
    - Generate SQL schema with proper PK/FK relationships
    - Write Python ETL script using pandas/sqlite3 to populate tables
    - **Include PRAGMA foreign_keys = ON and validation queries**
+   - **Include dimension count validation that fails if > 8**
    - Produce schema documentation template
 
 2. **code_executor_agent** will:
@@ -257,10 +280,17 @@ PRAGMA foreign_keys;  -- Should return 1
 -- Test 2: No constraint violations
 PRAGMA foreign_key_check;  -- Should return empty
 
--- Test 3: Joins work
+-- Test 3: Dimension count check
+SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'dim_%';  -- Should return ≤ 8
+
+-- Test 4: Joins work
 SELECT COUNT(*) FROM fact_table f
 JOIN dim_example d ON f.example_id = d.example_id;  -- Should not error
 ```
+
+**EXAMPLE OF PROPER GROUPING**:
+❌ **WRONG**: `dim_ADDRESSLINE1`, `dim_ADDRESSLINE2`, `dim_CITY`, `dim_STATE`, `dim_COUNTRY` (5 dimensions)
+✅ **CORRECT**: `dim_LOCATION` containing (ADDRESSLINE1, ADDRESSLINE2, CITY, STATE, POSTALCODE, COUNTRY, TERRITORY) (1 dimension)
 
 Begin execution.
 """
