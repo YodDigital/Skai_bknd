@@ -176,83 +176,91 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
+# TWO-AGENT STAR SCHEMA TRANSFORMATION SYSTEM
+
 You are part of a two-agent team tasked with transforming a CSV file into a properly structured star schema SQLite data warehouse.
 
-ROLE BREAKDOWN:
-- generator: Analyze the dataset, generate SQL schema, and produce Python ETL script
-- executor: Execute the script, validate constraints, and produce final documentation
+## ROLE BREAKDOWN:
+- **code_generator_agent**: Analyze the dataset, generate SQL schema, and produce Python ETL script
+- **code_executor_agent**: Execute the script, validate constraints, and produce final documentation
 
-INPUT PATHS (DO NOT MODIFY):
+## INPUT PATHS (DO NOT MODIFY):
 - CSV File Path: {csv_path}
 - Output Database Path: {db_path}
 - Schema Documentation Path: {schema_path}
 
-CRITICAL REQUIREMENTS:
+## CRITICAL REQUIREMENTS:
+
 1. Group related columns into at most 8 logical dimensions using universal patterns:
    - Person/Entity, Location, Product, Date, Organization, Status, Financial, Remaining
 2. Create surrogate keys (e.g., customer_id) in all dimension tables
 3. Fact table must contain only numeric measures + foreign keys to dimensions
-4. Enforce referential integrity using FOREIGN KEY constraints
+4. **ENFORCE REFERENTIAL INTEGRITY** using FOREIGN KEY constraints
 5. Generate full schema documentation at {schema_path}
-6. Validate:
-   - Dimension count ≤ 8
-   - Join functionality between fact and dimensions
-   - Data preservation (row count matches original CSV)
-   - No non-numeric fields in fact table
 
-IMPLEMENTATION STEPS:
-1. generator will:
+## MANDATORY FOREIGN KEY IMPLEMENTATION:
+
+**CRITICAL**: SQLite foreign keys are disabled by default. Your script MUST:
+
+```python
+# At database connection:
+conn.execute("PRAGMA foreign_keys = ON")
+
+# In table creation:
+CREATE TABLE fact_table (
+    dimension1_id INTEGER,
+    dimension2_id INTEGER,
+    measure1 REAL,
+    measure2 REAL,
+    FOREIGN KEY(dimension1_id) REFERENCES dim_dimension1(dimension1_id),
+    FOREIGN KEY(dimension2_id) REFERENCES dim_dimension2(dimension2_id)
+);
+
+# Validate constraints work:
+violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+if violations:
+    raise Exception(f"Foreign key violations detected: {violations}")
+```
+
+## VALIDATION REQUIREMENTS:
+
+Your script must validate:
+- ✓ Dimension count ≤ 8
+- ✓ `PRAGMA foreign_keys = ON` enabled
+- ✓ `PRAGMA foreign_key_check` returns empty (no violations)
+- ✓ Join functionality between fact and dimensions works
+- ✓ Data preservation (row count matches original CSV)
+- ✓ No non-numeric fields in fact table (except FKs)
+
+## IMPLEMENTATION STEPS:
+
+1. **code_generator_agent** will:
    - Classify columns as numeric, categorical, identifier
    - Propose dimension groupings with rationale
    - Generate SQL schema with proper PK/FK relationships
    - Write Python ETL script using pandas/sqlite3 to populate tables
+   - **Include PRAGMA foreign_keys = ON and validation queries**
    - Produce schema documentation template
 
-2. executor will:
+2. **code_executor_agent** will:
    - Run the generated script
    - Validate constraints using SQL queries
    - Confirm database structure and data accuracy
    - Finalize and save schema documentation
 
-EXAMPLE OUTPUT DOCUMENTATION TEMPLATE:
-STAR SCHEMA IMPLEMENTATION REPORT
-=================================
-Dataset: {csv_path}
-Generated: [timestamp]
+## SUCCESS CRITERIA:
+The final database must pass these tests:
+```sql
+-- Test 1: Foreign keys enabled
+PRAGMA foreign_keys;  -- Should return 1
 
-CONSTRAINT COMPLIANCE:
-✓ Total dimensions created: [number ≤ 8]
-✓ Intelligent grouping applied based on column semantics
-✓ Foreign keys implemented in fact table
-✓ All joins functional
-✓ Data preserved: Yes
-✓ No non-numeric values in fact table
+-- Test 2: No constraint violations
+PRAGMA foreign_key_check;  -- Should return empty
 
-DIMENSION SUMMARY:
-- dim_[name]: [columns included] (Pattern: [pattern type])
-- ...
-
-FACT TABLE:
-- Name: fact_[name]
-- Foreign keys: [list FK columns]
-- Measures: [list numeric columns]
-- Row count: [number] (matches original: [original_count])
-
-GROUPING RATIONALE:
-[Explain why columns were grouped together]
-
-VALIDATION RESULTS:
-✓ Dimension count: [number]/8
-✓ Foreign key functionality: PASS
-✓ Data preservation: PASS
-✓ Join queries: PASS
-
-SAMPLE QUERY:
-SELECT ...
-FROM fact_[name] f
-JOIN dim_[dimension1] d1 ON ...
-JOIN dim_[dimension2] d2 ON ...
-WHERE ...;
+-- Test 3: Joins work
+SELECT COUNT(*) FROM fact_table f
+JOIN dim_example d ON f.example_id = d.example_id;  -- Should not error
+```
 
 Begin execution.
 """
