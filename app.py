@@ -243,19 +243,19 @@ Your script MUST include these checks and FAIL if not met:
 # Check 1: Dimension count
 dimension_count = len([t for t in table_names if t.startswith('dim_')])
 if dimension_count > 8:
-    raise Exception(f"TOO MANY DIMENSIONS: {dimension_count}/8")
+    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count]/8")
 
 # Check 2: All tables exist
 expected_tables = list(dimension_groups.keys()) + ['fact_table']
 for table in expected_tables:
     if table not in existing_tables:
-        raise Exception(f"MISSING TABLE: {table}")
+        raise Exception(f"MISSING TABLE: [table name here]")
 
 # Check 3: Foreign keys enabled and working
 conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1 or raise Exception("Foreign keys not enabled")
 fk_violations = conn.execute("PRAGMA foreign_key_check").fetchall()
 if fk_violations:
-    raise Exception(f"Foreign key violations: {fk_violations}")
+    raise Exception(f"Foreign key violations: [fk_violations here]")
 
 # Check 4: Joins work
 # Test joining fact table to all dimensions
