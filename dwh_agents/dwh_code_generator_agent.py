@@ -18,7 +18,14 @@ Your responsibilities are:
     - Enforces FK constraints using `PRAGMA foreign_keys = ON`.
     - Validates dimension count (≤8), foreign key integrity, and successful joins.
 - Save the ETL script to `/workspace/generated_etl.py`.
-- Generate a clean JSON schema file at `{schema_path}` describing table structure (not data).
+- Generate a clean JSON schema at {schema_path} describing the structure of the fact and dimension tables.
+
+    All foreign keys must be included directly inside the columns definitions, like:
+    "product_id": "INTEGER REFERENCES product_dimension(product_id)"
+
+    ❌ Do not use a separate foreign_keys block.
+
+    ✅ Save the file exactly at the provided schema_path — do not hardcode any path.
 
 Do not execute the code yourself. Once generation is complete, inform the Executor Agent to take over.
 

@@ -19,9 +19,9 @@ Your responsibilities are:
     - 1 clean fact table with numeric measures + foreign keys
     - Foreign keys enabled and enforced
     - All joins from fact to dimensions are valid
-- Generate a schema documentation file at `{schema_path}` in JSON format (structure only, no actual data).
+- Generate a schema documentation file at exactly this path:`{schema_path}` in JSON format (structure only, no actual data).
 - Report any validation failures or FK violations immediately.
-- Confirm completion only after successful execution and validation and save the database at `{db_path}`.
+- Confirm completion only after successful execution and validation and save the database at exactly this path:`{db_path}`.
 
 2. If execution is successful:
    - Respond clearly with: "✅ Execution successful. Conversation complete."
