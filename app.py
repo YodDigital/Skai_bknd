@@ -176,123 +176,122 @@ def generate_dwh_for_user(csv_path):
     try:
         # Enhanced message with profiling
         initial_message = f"""
-# TWO-AGENT STAR SCHEMA TRANSFORMATION SYSTEM
+# UNIVERSAL TWO-AGENT STAR SCHEMA SYSTEM
 
-You are part of a two-agent team tasked with transforming a CSV file into a properly structured star schema SQLite data warehouse.
+You are part of a two-agent team tasked with transforming ANY CSV file into a properly structured star schema SQLite data warehouse.
 
 ## ROLE BREAKDOWN:
-- **code_generator_agent**: Analyze the dataset, generate SQL schema, and produce Python ETL script
-- **code_executor_agent**: Execute the script, validate constraints, and produce final documentation
+- **code_generator_agent**: Analyze dataset, create star schema, generate Python ETL script
+- **code_executor_agent**: Execute script, validate constraints, produce documentation
 
 ## INPUT PATHS (DO NOT MODIFY):
 - CSV File Path: {csv_path}
 - Output Database Path: {db_path}
 - Schema Documentation Path: {schema_path}
 
-## CRITICAL REQUIREMENTS:
+## UNIVERSAL STAR SCHEMA RULES:
 
-1. **MANDATORY**: Group related columns into **EXACTLY 8 OR FEWER** logical dimensions using these universal patterns:
-   - **Person/Entity**: Customer names, contact info, personal identifiers (CUSTOMERNAME, CONTACTFIRSTNAME, CONTACTLASTNAME, PHONE)
-   - **Location**: ALL address fields together (ADDRESSLINE1, ADDRESSLINE2, CITY, STATE, POSTALCODE, COUNTRY, TERRITORY) 
-   - **Product**: Product identifiers and categories (PRODUCTCODE, PRODUCTLINE)
-   - **Date/Time**: Date fields (ORDERDATE) 
-   - **Organization**: Company/business entities
-   - **Status**: Order status, deal status (STATUS, DEALSIZE)
-   - **Financial**: Currency, payment terms
-   - **Remaining**: Any other categorical columns that don't fit above patterns
-2. Create surrogate keys (e.g., customer_id) in all dimension tables
-3. Fact table must contain only numeric measures + foreign keys to dimensions
-4. **ENFORCE REFERENTIAL INTEGRITY** using FOREIGN KEY constraints
-5. Generate full schema documentation at {schema_path}
+### 1. ANALYZE AND GROUP COLUMNS:
+- **Numeric columns** → Fact table measures
+- **Categorical columns** → Group into ≤8 logical dimensions using these patterns:
+  - **Person/Entity**: Names, contacts, IDs, personal attributes
+  - **Location**: Address fields, geographic data, regions
+  - **Product/Item**: Product codes, categories, descriptions
+  - **Time/Date**: Dates, timestamps, periods
+  - **Organization**: Companies, departments, business units
+  - **Status/State**: Statuses, flags, conditions, categories
+  - **Financial**: Currencies, payment terms, financial categories
+  - **Other**: Remaining categorical fields that don't fit above
 
-## MANDATORY FOREIGN KEY IMPLEMENTATION:
-
-**CRITICAL**: SQLite foreign keys are disabled by default. Your script MUST:
+### 2. MANDATORY IMPLEMENTATION PATTERN:
 
 ```python
-# At database connection:
+# Step 1: Analyze CSV structure
+df = pd.read_csv(csv_path)
+numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+
+# Step 2: Group categorical columns into logical dimensions (≤8)
+dimension_groups = {
+    'dim_groupname1': ['col1', 'col2', 'col3'],  # Related columns
+    'dim_groupname2': ['col4', 'col5'],          # Related columns
+    # ... maximum 8 dimension groups
+}
+
+# Step 3: CRITICAL - Enable foreign keys
+conn = sqlite3.connect(db_path)
 conn.execute("PRAGMA foreign_keys = ON")
 
-# In table creation:
-CREATE TABLE fact_table (
-    dimension1_id INTEGER,
-    dimension2_id INTEGER,
-    measure1 REAL,
-    measure2 REAL,
-    FOREIGN KEY(dimension1_id) REFERENCES dim_dimension1(dimension1_id),
-    FOREIGN KEY(dimension2_id) REFERENCES dim_dimension2(dimension2_id)
-);
-
-# Validate constraints work:
-violations = conn.execute("PRAGMA foreign_key_check").fetchall()
-if violations:
-    raise Exception(f"Foreign key violations detected: [violations]")
-```
-
-## VALIDATION REQUIREMENTS:
-
-**CRITICAL**: Your script must validate and FAIL if any requirement is not met:
-- ✓ **Dimension count ≤ 8** (HARD LIMIT - script must count and error if exceeded)
-- ✓ **No single-column dimensions** (each dimension must contain multiple related columns)
-- ✓ `PRAGMA foreign_keys = ON` enabled
-- ✓ `PRAGMA foreign_key_check` returns empty (no violations)
-- ✓ Join functionality between fact and dimensions works
-- ✓ Data preservation (row count matches original CSV)
-- ✓ No non-numeric fields in fact table (except FKs)
-
-**DIMENSION VALIDATION CODE REQUIRED**:
-```python
-# Count dimensions and validate
-dimension_count = len([table for table in tables if table.startswith('dim_')])
-if dimension_count > 8:
-    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count]/8. Must group related columns together!")
-
-# Validate proper grouping (no single-column dimensions)
+# Step 4: Create dimension tables with surrogate keys
 for dim_name, columns in dimension_groups.items():
-    if len(columns) < 2:
-        raise Exception(f"Invalid grouping: [dim_name] has only [len(columns)] column(s). Group related columns together!")
+    surrogate_key = dim_name.replace('dim_', '') + '_id'
+    # Create table with surrogate key + original columns
+    # Populate with unique combinations
+
+# Step 5: Create fact table with FK constraints
+# Include ALL foreign keys to dimensions + numeric measures
+# MUST include FOREIGN KEY constraints
+
+# Step 6: Populate fact table using JOIN operations to get FK IDs
 ```
+
+## CRITICAL VALIDATION REQUIREMENTS:
+
+Your script MUST include these checks and FAIL if not met:
+
+```python
+# Check 1: Dimension count
+dimension_count = len([t for t in table_names if t.startswith('dim_')])
+if dimension_count > 8:
+    raise Exception(f"TOO MANY DIMENSIONS: {dimension_count}/8")
+
+# Check 2: All tables exist
+expected_tables = list(dimension_groups.keys()) + ['fact_table']
+for table in expected_tables:
+    if table not in existing_tables:
+        raise Exception(f"MISSING TABLE: {table}")
+
+# Check 3: Foreign keys enabled and working
+conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1 or raise Exception("Foreign keys not enabled")
+fk_violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+if fk_violations:
+    raise Exception(f"Foreign key violations: {fk_violations}")
+
+# Check 4: Joins work
+# Test joining fact table to all dimensions
+```
+
+## UNIVERSAL SUCCESS CRITERIA:
+
+✅ **Tables Created**: 1 fact table + 2-8 dimension tables
+✅ **Proper Grouping**: Related columns grouped logically, not 1-per-dimension
+✅ **Foreign Keys**: Enabled, constraints defined, violations checked
+✅ **Data Integrity**: Original row count preserved, all joins functional
+✅ **Clean Fact Table**: Only numeric measures + foreign keys
+
+## FORBIDDEN PATTERNS:
+
+❌ **One column per dimension**: `dim_city`, `dim_state`, `dim_country` (should be `dim_location`)
+❌ **Missing foreign keys**: Tables exist but no FK constraints
+❌ **Disabled foreign keys**: Not using `PRAGMA foreign_keys = ON`
+❌ **Missing dimension tables**: Only fact table created
+❌ **Non-numeric in fact**: Categorical data in fact table
 
 ## IMPLEMENTATION STEPS:
 
-1. **code_generator_agent** will:
-   - Classify columns as numeric, categorical, identifier
-   - **INTELLIGENTLY GROUP** related columns (e.g., all address fields = 1 location dimension)
-   - **VALIDATE dimension count ≤ 8 BEFORE proceeding**
-   - Generate SQL schema with proper PK/FK relationships
-   - Write Python ETL script using pandas/sqlite3 to populate tables
-   - **Include PRAGMA foreign_keys = ON and validation queries**
-   - **Include dimension count validation that fails if > 8**
-   - Produce schema documentation template
+1. **code_generator_agent**:
+   - Load and analyze CSV column types
+   - Intelligently group categorical columns (≤8 dimensions)
+   - Generate complete ETL script with validation
+   - Script must create ALL tables and populate with data
 
-2. **code_executor_agent** will:
-   - Run the generated script
-   - Validate constraints using SQL queries
-   - Confirm database structure and data accuracy
-   - Finalize and save schema documentation
+2. **code_executor_agent**:
+   - Execute the script
+   - Validate schema compliance
+   - Test database functionality
+   - Generate documentation
 
-## SUCCESS CRITERIA:
-The final database must pass these tests:
-```sql
--- Test 1: Foreign keys enabled
-PRAGMA foreign_keys;  -- Should return 1
-
--- Test 2: No constraint violations
-PRAGMA foreign_key_check;  -- Should return empty
-
--- Test 3: Dimension count check
-SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'dim_%';  -- Should return ≤ 8
-
--- Test 4: Joins work
-SELECT COUNT(*) FROM fact_table f
-JOIN dim_example d ON f.example_id = d.example_id;  -- Should not error
-```
-
-**EXAMPLE OF PROPER GROUPING**:
-❌ **WRONG**: `dim_ADDRESSLINE1`, `dim_ADDRESSLINE2`, `dim_CITY`, `dim_STATE`, `dim_COUNTRY` (5 dimensions)
-✅ **CORRECT**: `dim_LOCATION` containing (ADDRESSLINE1, ADDRESSLINE2, CITY, STATE, POSTALCODE, COUNTRY, TERRITORY) (1 dimension)
-
-Begin execution.
+Begin execution - analyze the dataset and create the universal star schema.
 """
         
         generator.initiate_chat(
