@@ -212,11 +212,11 @@ numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
 # Step 2: Group categorical columns into logical dimensions (≤8)
-dimension_groups = [
+dimension_groups = {
     'dim_groupname1': ['col1', 'col2', 'col3'],  # Related columns
     'dim_groupname2': ['col4', 'col5'],          # Related columns
     # ... maximum 8 dimension groups
-]
+}
 
 # Step 3: CRITICAL - Enable foreign keys
 conn = sqlite3.connect(db_path)
@@ -243,13 +243,13 @@ Your script MUST include these checks and FAIL if not met:
 # Check 1: Dimension count
 dimension_count = len([t for t in table_names if t.startswith('dim_')])
 if dimension_count > 8:
-    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count]/8")
+    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count here]/8")
 
 # Check 2: All tables exist
 expected_tables = list(dimension_groups.keys()) + ['fact_table']
 for table in expected_tables:
     if table not in existing_tables:
-        raise Exception(f"MISSING TABLE: [table name here]")
+        raise Exception(f"MISSING TABLE: [table here]")
 
 # Check 3: Foreign keys enabled and working
 conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1 or raise Exception("Foreign keys not enabled")
@@ -261,6 +261,43 @@ if fk_violations:
 # Test joining fact table to all dimensions
 ```
 
+## SCHEMA DOCUMENTATION FORMAT:
+
+Generate a JSON schema that defines STRUCTURE ONLY (no actual data values):
+
+```json
+{
+    "fact_table": {
+        "name": "fact_table_name",
+        "columns": {
+            "measure1": "DECIMAL(10,2)",
+            "measure2": "INTEGER", 
+            "dim1_id": "INTEGER REFERENCES dim_table1(table1_id)",
+            "dim2_id": "INTEGER REFERENCES dim_table2(table2_id)"
+        },
+        "description": "Fact table containing measures and foreign key references."
+    },
+    "dimensions": {
+        "dim_table1": {
+            "name": "dim_table1",
+            "columns": [IN CURLY BRACKETS
+                "table1_id": "INTEGER PRIMARY KEY",
+                "attribute1": "TEXT",
+                "attribute2": "TEXT"
+            ],
+            "description": "Dimension for grouped attributes."
+        }
+    }
+}
+```
+
+**CRITICAL SCHEMA RULES:**
+- ❌ **NO DATA VALUES** in schema - only column names and types
+- ✅ **Foreign keys as column definitions** with REFERENCES clause
+- ✅ **Logical dimension grouping** - related columns together
+- ✅ **Primary keys** clearly defined with PRIMARY KEY constraint
+- ✅ **Proper data types** (INTEGER, TEXT, DECIMAL, etc.)
+
 ## UNIVERSAL SUCCESS CRITERIA:
 
 ✅ **Tables Created**: 1 fact table + 2-8 dimension tables
@@ -268,6 +305,7 @@ if fk_violations:
 ✅ **Foreign Keys**: Enabled, constraints defined, violations checked
 ✅ **Data Integrity**: Original row count preserved, all joins functional
 ✅ **Clean Fact Table**: Only numeric measures + foreign keys
+✅ **Schema Documentation**: Structure only, no embedded data values
 
 ## FORBIDDEN PATTERNS:
 
@@ -276,6 +314,8 @@ if fk_violations:
 ❌ **Disabled foreign keys**: Not using `PRAGMA foreign_keys = ON`
 ❌ **Missing dimension tables**: Only fact table created
 ❌ **Non-numeric in fact**: Categorical data in fact table
+❌ **Data in schema**: Including actual values instead of structure
+❌ **Separate FK objects**: Foreign keys must be in column definitions with REFERENCES
 
 ## IMPLEMENTATION STEPS:
 
@@ -283,6 +323,7 @@ if fk_violations:
    - Load and analyze CSV column types
    - Intelligently group categorical columns (≤8 dimensions)
    - Generate complete ETL script with validation
+   - Create proper JSON schema (structure only, no data)
    - Script must create ALL tables and populate with data
 
 2. **code_executor_agent**:
