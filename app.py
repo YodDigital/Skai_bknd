@@ -212,11 +212,11 @@ numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
 # Step 2: Group categorical columns into logical dimensions (≤8)
-dimension_groups = {
+dimension_groups = [
     'dim_groupname1': ['col1', 'col2', 'col3'],  # Related columns
     'dim_groupname2': ['col4', 'col5'],          # Related columns
     # ... maximum 8 dimension groups
-}
+]
 
 # Step 3: CRITICAL - Enable foreign keys
 conn = sqlite3.connect(db_path)
