@@ -1,6 +1,6 @@
 from autogen import AssistantAgent
 
-def create_dwh_agent(llm_config, csv_path, schema_path):
+def create_dwh_agent(llm_config, csv_path, schema_path, db_path):
     # Extract column names from the CSV
     return AssistantAgent(
         name="dwh_generator_agent",
@@ -17,16 +17,25 @@ Your responsibilities are:
     - Creates the fact table with foreign keys referencing those dimensions.
     - Enforces FK constraints using `PRAGMA foreign_keys = ON`.
     - Validates dimension count (≤8), foreign key integrity, and successful joins.
+- Your Python ETL script must:  
+    - Connect to a SQLite database at the exact db_path provided (do not hardcode!)
+    - Use: conn = sqlite3.connect(`{db_path}`)
+    - Ensure all tables are created and data inserted in this database
+    - Save all changes by calling conn.commit() and conn.close()
+Also ensure this line appears in the generated script:
+```python
+conn = sqlite3.connect(`{db_path}`)
+conn.execute("PRAGMA foreign_keys = ON")
+# ... create tables, insert data ...
+conn.commit()
+conn.close()
+```
 - Save the ETL script to `/workspace/generated_etl.py`.
 - Generate a clean JSON schema at {schema_path} describing the structure of the fact and dimension tables.
-
-    All foreign keys must be included directly inside the columns definitions, like:
-    "product_id": "INTEGER REFERENCES product_dimension(product_id)"
-
-    ❌ Do not use a separate foreign_keys block.
-
-    ✅ Save the file exactly at the provided schema_path — do not hardcode any path.
-
+    - All foreign keys must be included directly inside the columns definitions, like:
+        "product_id": "INTEGER REFERENCES product_dimension(product_id)"
+    - ❌ Do not use a separate foreign_keys block.
+    - ✅ Save the file exactly at the provided schema_path — do not hardcode any path.
 Do not execute the code yourself. Once generation is complete, inform the Executor Agent to take over.
 
 You always:

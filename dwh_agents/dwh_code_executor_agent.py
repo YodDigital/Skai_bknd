@@ -23,6 +23,10 @@ Your responsibilities are:
 - Report any validation failures or FK violations immediately.
 - Confirm completion only after successful execution and validation and save the database at exactly this path:`{db_path}`.
 
+- After executing the script, validate that:
+   - The database file exists at db_path
+   - The required tables are present (fact_table, and dimension tables)
+   - The row count in the fact table matches the CSV
 2. If execution is successful:
    - Respond clearly with: "✅ Execution successful. Conversation complete."
    - DO NOT respond again unless a new message is received.
