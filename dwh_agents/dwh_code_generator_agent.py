@@ -1,6 +1,6 @@
 from autogen import AssistantAgent
 
-def create_dwh_agent(llm_config, csv_path):
+def create_dwh_agent(llm_config, csv_path, schema_path):
     # Extract column names from the CSV
     return AssistantAgent(
         name="dwh_generator_agent",
@@ -18,6 +18,7 @@ Your responsibilities are:
     - Enforces FK constraints using `PRAGMA foreign_keys = ON`.
     - Validates dimension count (≤8), foreign key integrity, and successful joins.
 - Save the ETL script to `/workspace/generated_etl.py`.
+- Generate a clean JSON schema file at `{schema_path}` describing table structure (not data).
 
 Do not execute the code yourself. Once generation is complete, inform the Executor Agent to take over.
 
