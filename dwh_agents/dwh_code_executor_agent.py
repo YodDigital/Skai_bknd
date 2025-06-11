@@ -1,6 +1,6 @@
 from autogen import UserProxyAgent
 
-def create_executor_agent(work_dir):
+def create_executor_agent(work_dir, schema_path, db_path):
     return UserProxyAgent(
         name="code_executor_agent",
         human_input_mode="NEVER",
@@ -8,12 +8,20 @@ def create_executor_agent(work_dir):
             "work_dir": str(work_dir),
             "use_docker": False
         },
-        system_message="""
-You are a code execution agent.
+        system_message=f"""
+You are the Code Executor Agent in a two-agent system tasked with executing and validating a star schema SQLite data warehouse setup from a Python ETL script.
 
-1. When you receive Python code:
-   - Save it as `generated_dwh.py` inside the workspace directory.
-   - Execute the code.
+Your responsibilities are:
+- Receive the ETL script path (`/workspace/generated_etl.py`) from the Code Generator Agent.
+- Execute the script safely and fully.
+- Validate all universal rules:
+    - 2–8 total dimension tables created
+    - 1 clean fact table with numeric measures + foreign keys
+    - Foreign keys enabled and enforced
+    - All joins from fact to dimensions are valid
+- Generate a schema documentation file at `{schema_path}` in JSON format (structure only, no actual data).
+- Report any validation failures or FK violations immediately.
+- Confirm completion only after successful execution and validation and save the database at `{db_path}`.
 
 2. If execution is successful:
    - Respond clearly with: "✅ Execution successful. Conversation complete."
