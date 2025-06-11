@@ -212,11 +212,11 @@ numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
 # Step 2: Group categorical columns into logical dimensions (≤8)
-dimension_groups = {
+dimension_groups = {{
     'dim_groupname1': ['col1', 'col2', 'col3'],  # Related columns
     'dim_groupname2': ['col4', 'col5'],          # Related columns
     # ... maximum 8 dimension groups
-}
+}}
 
 # Step 3: CRITICAL - Enable foreign keys
 conn = sqlite3.connect(db_path)
@@ -243,19 +243,19 @@ Your script MUST include these checks and FAIL if not met:
 # Check 1: Dimension count
 dimension_count = len([t for t in table_names if t.startswith('dim_')])
 if dimension_count > 8:
-    raise Exception(f"TOO MANY DIMENSIONS: [dimension_count here]/8")
+    raise Exception(f"TOO MANY DIMENSIONS: {{dimension_count}}/8")
 
 # Check 2: All tables exist
 expected_tables = list(dimension_groups.keys()) + ['fact_table']
 for table in expected_tables:
     if table not in existing_tables:
-        raise Exception(f"MISSING TABLE: [table here]")
+        raise Exception(f"MISSING TABLE: {{table}}")
 
 # Check 3: Foreign keys enabled and working
 conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1 or raise Exception("Foreign keys not enabled")
 fk_violations = conn.execute("PRAGMA foreign_key_check").fetchall()
 if fk_violations:
-    raise Exception(f"Foreign key violations: [fk_violations here]")
+    raise Exception(f"Foreign key violations: {{fk_violations}}")
 
 # Check 4: Joins work
 # Test joining fact table to all dimensions
@@ -266,29 +266,29 @@ if fk_violations:
 Generate a JSON schema that defines STRUCTURE ONLY (no actual data values):
 
 ```json
-{
-    "fact_table": {
+{{
+    "fact_table": {{
         "name": "fact_table_name",
-        "columns": {
+        "columns": {{
             "measure1": "DECIMAL(10,2)",
             "measure2": "INTEGER", 
             "dim1_id": "INTEGER REFERENCES dim_table1(table1_id)",
             "dim2_id": "INTEGER REFERENCES dim_table2(table2_id)"
-        },
+        }},
         "description": "Fact table containing measures and foreign key references."
-    },
-    "dimensions": {
-        "dim_table1": {
+    }},
+    "dimensions": {{
+        "dim_table1": {{
             "name": "dim_table1",
-            "columns": [IN CURLY BRACKETS
+            "columns": {{
                 "table1_id": "INTEGER PRIMARY KEY",
                 "attribute1": "TEXT",
                 "attribute2": "TEXT"
-            ],
+            }},
             "description": "Dimension for grouped attributes."
-        }
-    }
-}
+        }}
+    }}
+}}
 ```
 
 **CRITICAL SCHEMA RULES:**
