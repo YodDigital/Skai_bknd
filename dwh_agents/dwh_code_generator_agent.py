@@ -36,7 +36,7 @@ Generate a complete and well-structured Python ETL script that:
 ### 🛠 3. CREATE TABLES AND INSERT DATA
 - Connect to the database using:
 ```python
-conn = sqlite3.connect("{db_path}")
+conn = sqlite3.connect(`{db_path}`)
 conn.execute("PRAGMA foreign_keys = ON")
 ```
 - Use SQLAlchemy or SQLite DDL to:
