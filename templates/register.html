@@ -70,5 +70,20 @@
             </div>
         </div>
     </div>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="text-white text-center">
+            <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"></path>
+            </svg>
+            <p class="text-lg font-semibold">Creating your data warehouse... Please wait</p>
+        </div>
+    </div>
+    <script>
+        document.querySelector('form').addEventListener('submit', function () {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        });
+    </script>
 </body>
 </html>
